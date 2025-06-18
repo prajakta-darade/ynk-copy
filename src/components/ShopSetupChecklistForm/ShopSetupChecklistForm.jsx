@@ -4,13 +4,16 @@ import { useSubmitFormMutation } from "../../store/formApi";
 import { useUser } from "../context/UserContext";
 import ShopSetupChecklistFormQuestion from "./ShopSetupChecklistFormQuestion";
 import useCurrentTime from "../hook/useCurrentTime";
-import logo from "../../assets/logo.png"; // Assuming you have a logo image in this path
+import logo from "../../assets/logo.png";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
+
 const { formConfig, validationMessages } = ShopSetupChecklistFormQuestion;
 
 export default function ShopSetupChecklistForm() {
   const navigate = useNavigate();
   const { user } = useUser();
-  const [language, setLanguage] = useState('en'); // डिफॉल्ट इंग्लिश
+  const [language, setLanguage] = useState("en");
   const [formData, setFormData] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -19,12 +22,10 @@ export default function ShopSetupChecklistForm() {
   const { formatDateTime } = useCurrentTime();
   const totalQuestions = formConfig.fields.length;
 
-  // भाषा टॉगल फंक्शन
   const toggleLanguage = () => {
-    setLanguage(prev => prev === 'en' ? 'mr' : 'en');
+    setLanguage((prev) => (prev === "en" ? "mr" : "en"));
   };
 
-  // वापरकर्ता माहिती गहाळ असल्यास रीडायरेक्ट करा
   useEffect(() => {
     if (!user?.name || !user?.mobile || !user?.branch) {
       navigate("/contact-info");
@@ -49,8 +50,7 @@ export default function ShopSetupChecklistForm() {
     }
 
     if (field.followup && formData[id] !== undefined) {
-      const followup =
-        field.followup[formData[id] ? "yes" : "no"]?.fields || [];
+      const followup = field.followup[formData[id] ? "yes" : "no"]?.fields || [];
       followup.forEach((subField) => {
         if (
           subField.required &&
@@ -103,7 +103,7 @@ export default function ShopSetupChecklistForm() {
     }
 
     const inputDate = new Date(dateStr);
-    const today = new Date("2025-06-12"); // आजची तारीख (संदर्भानुसार)
+    const today = new Date("2025-06-12");
     if (isNaN(inputDate.getTime())) {
       return validationMessages[language]?.invalidDate || "अवैध तारीख";
     }
@@ -157,7 +157,10 @@ export default function ShopSetupChecklistForm() {
 
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join("\n");
-      alert(errorMessages);
+      toast.error(errorMessages, {
+        position: "top-right",
+        autoClose: 3000,
+      });
       setErrors(validationErrors);
       return;
     }
@@ -166,24 +169,28 @@ export default function ShopSetupChecklistForm() {
       setCurrentQuestionIndex((prev) => prev + 1);
       setErrors({});
     } else {
-      // सबमिशनआधी वापरकर्ता माहिती व्हॅलिडेट करा
       if (!user.name || !user.mobile || !user.branch) {
-        alert(
-          language === 'mr'
-            ? 'वापरकर्ता माहिती अपूर्ण आहे. कृपया आपली माहिती भरा.'
-            : 'User information is incomplete. Please fill in your details.'
-        );
-        navigate('/contact-info');
+        const errorMessage =
+          language === "mr"
+            ? "वापरकर्ता माहिती अपूर्ण आहे. कृपया आपली माहिती भरा."
+            : "User information is incomplete. Please fill in your details.";
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        navigate("/contact-info");
         return;
       }
 
-      // भाषा व्हॅलिडेट करा
-      if (!['en', 'mr'].includes(language)) {
-        alert(
-          language === 'mr'
-            ? 'अवैध भाषा निवड. कृपया इंग्लिश किंवा मराठी निवडा.'
-            : 'Invalid language selection. Please choose English or Marathi.'
-        );
+      if (!["en", "mr"].includes(language)) {
+        const errorMessage =
+          language === "mr"
+            ? "अवैध भाषा निवड. कृपया इंग्लिश किंवा मराठी निवडा."
+            : "Invalid language selection. Please choose English or Marathi.";
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return;
       }
 
@@ -290,22 +297,34 @@ export default function ShopSetupChecklistForm() {
         }
       });
 
-      // डीबगिंगसाठी FormData लॉग करा
+      // Log FormData for debugging
       for (let [key, value] of formDataToSend.entries()) {
         console.log(`${key}: ${value}`);
       }
 
       try {
         const response = await submitForm(formDataToSend).unwrap();
-        console.log('फॉर्म सबमिशन यशस्वी:', response);
+        console.log("Form submission successful:", response);
         setIsSubmitted(true);
+        toast.success(
+          language === "mr"
+            ? "फॉर्म यशस्वीरित्या सबमिट झाला!"
+            : "Form submitted successfully!",
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
       } catch (err) {
-        console.error('सबमिशन एरर:', err);
-        alert(
+        console.error("Submission error:", err);
+        const errorMessage =
           language === "mr"
             ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || "अज्ञात त्रुटी"}`
-            : `Error submitting form: ${err?.data?.message || "Unknown error"}`
-        );
+            : `Error submitting form: ${err?.data?.message || "Unknown error"}`;
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     }
   };
@@ -427,33 +446,30 @@ export default function ShopSetupChecklistForm() {
               disabled={isLoading}
               aria-label={question}
             />
-           
           </div>
         )}
-{field.type === "file" && (
-        <div className="mb-4">
-         
-          <input
-            type="file"
-            id={id}
-            name={id}
-            onChange={(e) => handleFileChange(id, e)}
-            className={`w-full text-gray-600 border rounded px-3 py-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 ${
-              errors[id] ? "border-red-500" : "border-blue-200"
-            }`}
-            accept={id.includes("video") ? "video/*" : "image/*"}
-            disabled={isLoading}
-            aria-label={`Upload file for ${question}`}
-          />
-          {formData[id] && (
-            <p className="mt-2 text-gray-600 text-sm">
-              {language === "mr" ? "फाइल निवडली: " : "File selected: "}
-              {formData[id].name}
-            </p>
-          )}
-         
-        </div>
-      )}
+        {field.type === "file" && (
+          <div className="mb-4">
+            <input
+              type="file"
+              id={id}
+              name={id}
+              onChange={(e) => handleFileChange(id, e)}
+              className={`w-full text-gray-600 border rounded px-3 py-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 ${
+                errors[id] ? "border-red-500" : "border-blue-200"
+              }`}
+              accept={id.includes("video") ? "video/*" : "image/*"}
+              disabled={isLoading}
+              aria-label={`Upload file for ${question}`}
+            />
+            {formData[id] && (
+              <p className="mt-2 text-gray-600 text-sm">
+                {language === "mr" ? "फाइल निवडली: " : "File selected: "}
+                {formData[id].name}
+              </p>
+            )}
+          </div>
+        )}
         {formData[id] !== undefined &&
           field.followup &&
           field.type === "yesno" && (
@@ -470,6 +486,7 @@ export default function ShopSetupChecklistForm() {
               )}
             </div>
           )}
+   
       </div>
     );
   };
@@ -513,6 +530,7 @@ export default function ShopSetupChecklistForm() {
             {language === "mr" ? "पुढे जा" : "Continue"}
           </button>
         </div>
+        <ToastContainer />
       </div>
     );
   }
@@ -521,35 +539,28 @@ export default function ShopSetupChecklistForm() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-[#e3f2fd] p-6 rounded-xl shadow-md">
- 
-  <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
+        <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
           <div className="flex items-center space-x-3">
-            <img src={logo} alt="YNK Logo" className="h-10 w-10" />
+            <img
+              src={logo}
+              alt="YNK Logo"
+              className="h-10 w-10"
+              onError={(e) => {
+                console.error("Failed to load logo:", e);
+                e.target.src = "https://via.placeholder.com/40";
+              }}
+            />
             <h1 className="text-xl font-bold">YNK</h1>
           </div>
           <button
-             onClick={toggleLanguage}
-            className="text-sm text-gray-600 underline hover:text-blue-600" disabled={isLoading}
+            onClick={toggleLanguage}
+            className="text-sm text-gray-600 underline hover:text-blue-600"
+            disabled={isLoading}
+            aria-label={language === "mr" ? "Switch to English" : "Switch to Marathi"}
           >
-            {language === 'mr' ? 'English' : 'मराठी'}
+            {language === "mr" ? "English" : "मराठी"}
           </button>
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         <h2 className="text-lg text-center font-bold mb-2">
           {formConfig[`title_${language}`] || formConfig.title_mr || formConfig.title_en || "दुकान सेटअप चेकलिस्ट"}
@@ -611,14 +622,9 @@ export default function ShopSetupChecklistForm() {
             </span>
           </button>
         </div>
-        {apiError && (
-          <p className="text-red-500 text-sm mt-4 text-center">
-            {language === "mr"
-              ? `त्रुटी: ${apiError?.data?.message || "अज्ञात त्रुटी"}`
-              : `Error: ${apiError?.data?.message || "Unknown error"}`}
-          </p>
-        )}
+      
       </div>
+      <ToastContainer />
     </div>
   );
 }

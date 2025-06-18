@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useSubmitFormMutation } from "../../store/formApi";
 import OnlineServeyQuestion from "./OnlineServeyQuestion.jsx";
 import logo from "../../assets/logo.png";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
 
 const { formConfig, validationMessages } = OnlineServeyQuestion;
 
-// Radio Component
-// Radio Component
 const RadioComponent = ({
   lang,
   comp,
@@ -26,7 +26,7 @@ const RadioComponent = ({
         <div key={i} className="flex items-center space-x-3 mb-2">
           <input
             type="radio"
-            id={`${qId}_${compIdx}_${i}`} // Unique ID for each radio input
+            id={`${qId}_${compIdx}_${i}`}
             name={`${qId}_${compIdx}`}
             value={option.value}
             checked={value === option.value}
@@ -40,8 +40,8 @@ const RadioComponent = ({
             aria-label={lang === "mr" ? option.label_mr : option.label_en}
           />
           <label
-            htmlFor={`${qId}_${compIdx}_${i}`} // Link label to radio input
-            className="text-base text-gray-600 cursor-pointer" // Add cursor-pointer for better UX
+            htmlFor={`${qId}_${compIdx}_${i}`}
+            className="text-base text-gray-600 cursor-pointer"
           >
             {lang === "mr" ? option.label_mr : option.label_en}
           </label>
@@ -50,7 +50,7 @@ const RadioComponent = ({
     </div>
   );
 };
-// Input Component
+
 const InputComponent = ({
   lang,
   comp,
@@ -81,13 +81,13 @@ const InputComponent = ({
   );
 };
 
-// Image Upload Component
 const ImageUploadComponent = ({
   lang,
   comp,
   qId,
   compIdx,
   handleImageUpload,
+  uploadedFiles,
 }) => (
   <div className="mb-4">
     <p className="text-base font-medium text-gray-800 mb-2 text-left">
@@ -115,9 +115,15 @@ const ImageUploadComponent = ({
         aria-label={lang === "mr" ? comp.message_mr : comp.message_en}
       />
     </div>
+    {uploadedFiles?.[qId]?.[compIdx]?.length > 0 && (
+      <p className="mt-2 text-gray-600 text-sm">
+        {lang === "mr" ? "फाइल्स निवडल्या: " : "Files selected: "}
+        {uploadedFiles[qId][compIdx].map((file) => file.name).join(", ")}
+      </p>
+    )}
   </div>
 );
-// Checkbox Component
+
 const CheckboxComponent = ({
   lang,
   comp,
@@ -162,7 +168,6 @@ const CheckboxComponent = ({
   );
 };
 
-// Render Field Function
 const renderField = ({
   lang,
   field,
@@ -171,6 +176,7 @@ const renderField = ({
   followupValues,
   setFollowupValues,
   handleImageUpload,
+  uploadedFiles,
 }) => {
   const question = field[`question_${lang}`] || field.question_mr;
   const id = field.id;
@@ -238,7 +244,8 @@ const renderField = ({
               id,
               followupValues,
               setFollowupValues,
-              handleImageUpload
+              handleImageUpload,
+              uploadedFiles
             );
             return followupContent ? (
               <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -253,7 +260,6 @@ const renderField = ({
   return null;
 };
 
-// Render Followup Function
 const renderFollowup = (
   selectedAnswer,
   followup,
@@ -261,7 +267,8 @@ const renderFollowup = (
   qId,
   followupValues,
   setFollowupValues,
-  handleImageUpload
+  handleImageUpload,
+  uploadedFiles
 ) => {
   const followupConfig = followup?.[selectedAnswer ? "yes" : "no"];
   if (!followupConfig) return null;
@@ -274,6 +281,7 @@ const renderFollowup = (
         qId={qId}
         compIdx={0}
         handleImageUpload={handleImageUpload}
+        uploadedFiles={uploadedFiles}
       />
     );
   }
@@ -368,6 +376,7 @@ const renderFollowup = (
                 qId={qId}
                 compIdx={idx}
                 handleImageUpload={handleImageUpload}
+                uploadedFiles={uploadedFiles}
               />
             );
           }
@@ -393,7 +402,6 @@ const renderFollowup = (
   return null;
 };
 
-// Question Renderer Component
 const QuestionRenderer = ({
   lang,
   question,
@@ -404,6 +412,7 @@ const QuestionRenderer = ({
   handleImageUpload,
   handleYesNoChange,
   formData,
+  uploadedFiles,
 }) => {
   const renderYesNo = () => (
     <div className="question">
@@ -415,6 +424,7 @@ const QuestionRenderer = ({
         followupValues,
         setFollowupValues,
         handleImageUpload,
+        uploadedFiles,
       })}
     </div>
   );
@@ -459,7 +469,8 @@ const QuestionRenderer = ({
           question.id,
           followupValues,
           setFollowupValues,
-          handleImageUpload
+          handleImageUpload,
+          uploadedFiles
         )}
     </div>
   );
@@ -502,6 +513,7 @@ const QuestionRenderer = ({
               qId={question.id}
               compIdx={idx}
               handleImageUpload={handleImageUpload}
+              uploadedFiles={uploadedFiles}
             />
           );
         }
@@ -517,7 +529,6 @@ const QuestionRenderer = ({
   return null;
 };
 
-// Main Form Component
 const OnlineServeForm = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -553,6 +564,7 @@ const OnlineServeForm = () => {
       },
     }));
   };
+
   const validateQuestion = (index) => {
     const question = questions[index];
     const answer = answers[question.id];
@@ -561,13 +573,19 @@ const OnlineServeForm = () => {
 
     if (question.type === "yesno" || question.type === "radio") {
       if (answer === undefined) {
-        alert(validationMessages[lang].answerRequired);
+        toast.error(validationMessages[lang].answerRequired, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return false;
       }
     }
 
     if (question.type === "input" && !followupValue[0]?.trim()) {
-      alert(validationMessages[lang].answerRequired);
+      toast.error(validationMessages[lang].answerRequired, {
+        position: "top-right",
+        autoClose: 3000,
+        });
       return false;
     }
 
@@ -578,7 +596,10 @@ const OnlineServeForm = () => {
           comp.type === "imageupload" &&
           (!files[i] || files[i].length === 0)
         ) {
-          alert(validationMessages[lang].imageRequired);
+          toast.error(validationMessages[lang].imageRequired, {
+            position: "top-right",
+            autoClose: 3000,
+          });
           return false;
         }
       }
@@ -589,12 +610,18 @@ const OnlineServeForm = () => {
       if (!followup) return true;
 
       if (followup.type === "radio" && !followupValue[0]) {
-        alert(validationMessages[lang].followupRequired);
+        toast.error(validationMessages[lang].followupRequired, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return false;
       }
 
       if (followup.type === "input" && !followupValue[0]?.trim()) {
-        alert(validationMessages[lang].followupRequired);
+        toast.error(validationMessages[lang].followupRequired, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return false;
       }
 
@@ -602,7 +629,10 @@ const OnlineServeForm = () => {
         followup.type === "checkbox" &&
         (!followupValue[0] || followupValue[0].length === 0)
       ) {
-        alert(validationMessages[lang].checkboxRequired);
+        toast.error(validationMessages[lang].checkboxRequired, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return false;
       }
 
@@ -610,7 +640,10 @@ const OnlineServeForm = () => {
         followup.type === "imageupload" &&
         (!files[0] || files[0].length === 0)
       ) {
-        alert(validationMessages[lang].imageRequired);
+        toast.error(validationMessages[lang].imageRequired, {
+          position: "top-right",
+          autoClose: 3000,
+        });
         return false;
       }
 
@@ -619,10 +652,12 @@ const OnlineServeForm = () => {
           const comp = followup.components[i];
           if (comp.type === "radio") {
             if (!followupValue[i]) {
-              alert(validationMessages[lang].followupRequired);
+              toast.error(validationMessages[lang].followupRequired, {
+                position: "top-right",
+                autoClose: 3000,
+              });
               return false;
             }
-            // Check if the selected radio option is an "इतर" variant
             const selectedOption = comp.options.find(
               (option) => option.value === followupValue[i]
             );
@@ -630,7 +665,6 @@ const OnlineServeForm = () => {
               selectedOption &&
               selectedOption.label_mr &&
               selectedOption.label_mr.includes("इतर");
-            // Check if the next component is an input field
             const nextComp =
               i + 1 < followup.components.length
                 ? followup.components[i + 1]
@@ -638,15 +672,17 @@ const OnlineServeForm = () => {
             const isNextCompInput = nextComp && nextComp.type === "input";
             if (
               isOtherSelected &&
-              isNextCompInput && // Only apply validation if the next component is an input field
-              (!followupValue[i + 1] || !followupValue[i + 1].trim()) // Check if the next input field is empty
+              isNextCompInput &&
+              (!followupValue[i + 1] || !followupValue[i + 1].trim())
             ) {
-              alert(validationMessages[lang].inputRequired);
+              toast.error(validationMessages[lang].inputRequired, {
+                position: "top-right",
+                autoClose: 3000,
+              });
               return false;
             }
           }
           if (comp.type === "input") {
-            // Only require the input if the previous radio selected an "इतर" variant and this is the input following it
             const previousComp = i > 0 ? followup.components[i - 1] : null;
             if (previousComp && previousComp.type === "radio") {
               const selectedOption = previousComp.options.find(
@@ -660,7 +696,10 @@ const OnlineServeForm = () => {
                 isOtherSelected &&
                 (!followupValue[i] || !followupValue[i].trim())
               ) {
-                alert(validationMessages[lang].inputRequired);
+                toast.error(validationMessages[lang].inputRequired, {
+                  position: "top-right",
+                  autoClose: 3000,
+                });
                 return false;
               }
             }
@@ -669,14 +708,20 @@ const OnlineServeForm = () => {
             comp.type === "checkbox" &&
             (!followupValue[i] || followupValue[i].length === 0)
           ) {
-            alert(validationMessages[lang].checkboxRequired);
+            toast.error(validationMessages[lang].checkboxRequired, {
+              position: "top-right",
+              autoClose: 3000,
+            });
             return false;
           }
           if (
             comp.type === "imageupload" &&
             (!files[i] || files[i].length === 0)
           ) {
-            alert(validationMessages[lang].imageRequired);
+            toast.error(validationMessages[lang].imageRequired, {
+              position: "top-right",
+              autoClose: 3000,
+            });
             return false;
           }
         }
@@ -687,10 +732,12 @@ const OnlineServeForm = () => {
           const comp = followup.fields[i];
           if (comp.type === "radio") {
             if (!followupValue[i]) {
-              alert(validationMessages[lang].followupRequired);
+              toast.error(validationMessages[lang].followupRequired, {
+                position: "top-right",
+                autoClose: 3000,
+              });
               return false;
             }
-            // Check if the selected radio option is an "इतर" variant
             const selectedOption = comp.options.find(
               (option) => option.value === followupValue[i]
             );
@@ -698,21 +745,22 @@ const OnlineServeForm = () => {
               selectedOption &&
               selectedOption.label_mr &&
               selectedOption.label_mr.includes("इतर");
-            // Check if the next component is an input field
             const nextComp =
               i + 1 < followup.fields.length ? followup.fields[i + 1] : null;
             const isNextCompInput = nextComp && nextComp.type === "input";
             if (
               isOtherSelected &&
-              isNextCompInput && // Only apply validation if the next component is an input field
-              (!followupValue[i + 1] || !followupValue[i + 1].trim()) // Check if the next input field is empty
+              isNextCompInput &&
+              (!followupValue[i + 1] || !followupValue[i + 1].trim())
             ) {
-              alert(validationMessages[lang].inputRequired);
+              toast.error(validationMessages[lang].inputRequired, {
+                position: "top-right",
+                autoClose: 3000,
+              });
               return false;
             }
           }
           if (comp.type === "input") {
-            // Only require the input if the previous radio selected an "इतर" variant
             const previousComp = i > 0 ? followup.fields[i - 1] : null;
             if (previousComp && previousComp.type === "radio") {
               const selectedOption = previousComp.options.find(
@@ -726,7 +774,10 @@ const OnlineServeForm = () => {
                 isOtherSelected &&
                 (!followupValue[i] || !followupValue[i].trim())
               ) {
-                alert(validationMessages[lang].inputRequired);
+                toast.error(validationMessages[lang].inputRequired, {
+                  position: "top-right",
+                  autoClose: 3000,
+                });
                 return false;
               }
             }
@@ -735,14 +786,20 @@ const OnlineServeForm = () => {
             comp.type === "checkbox" &&
             (!followupValue[i] || followupValue[i].length === 0)
           ) {
-            alert(validationMessages[lang].checkboxRequired);
+            toast.error(validationMessages[lang].checkboxRequired, {
+              position: "top-right",
+              autoClose: 3000,
+            });
             return false;
           }
           if (
             comp.type === "imageupload" &&
             (!files[i] || files[i].length === 0)
           ) {
-            alert(validationMessages[lang].imageRequired);
+            toast.error(validationMessages[lang].imageRequired, {
+              position: "top-right",
+              autoClose: 3000,
+            });
             return false;
           }
         }
@@ -905,10 +962,14 @@ const OnlineServeForm = () => {
 
     try {
       await submitForm(formData).unwrap();
-      alert(
+      toast.success(
         lang === "mr"
           ? "फॉर्म यशस्वीरीत्या सबमिट केला!"
-          : "Form submitted successfully!"
+          : "Form submitted successfully!",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
       );
       setAnswers({});
       setFollowupValues({});
@@ -916,12 +977,16 @@ const OnlineServeForm = () => {
       setCurrentIndex(0);
       navigate("/shop-measurements");
     } catch (err) {
-      alert(
+      toast.error(
         lang === "mr"
           ? `फॉर्म सबमिट करताना त्रुटी आली: ${
               err?.data?.message || "Unknown error"
             }`
-          : `Error submitting form: ${err?.data?.message || "Unknown error"}`
+          : `Error submitting form: ${err?.data?.message || "Unknown error"}`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
       );
     }
   };
@@ -941,7 +1006,15 @@ const OnlineServeForm = () => {
       <div className="w-full max-w-lg bg-[#e3f2fd] p-6 rounded-xl shadow-md">
         <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
           <div className="flex items-center space-x-3">
-            <img src={logo} alt="YNK Logo" className="h-10 w-10" />
+            <img
+              src={logo}
+              alt="YNK Logo"
+              className="h-10 w-10"
+              onError={(e) => {
+                console.error("Failed to load logo:", e);
+                e.target.src = "https://via.placeholder.com/40";
+              }}
+            />
             <h1 className="text-xl font-bold">YNK</h1>
           </div>
           <div className="flex justify-end">
@@ -949,6 +1022,9 @@ const OnlineServeForm = () => {
               onClick={handleLanguageToggle}
               className="text-sm text-gray-600 underline hover:text-blue-600"
               disabled={isLoading}
+              aria-label={
+                lang === "mr" ? "Switch to English" : "Switch to Marathi"
+              }
             >
               {lang === "mr" ? "English" : "मराठी"}
             </button>
@@ -969,6 +1045,7 @@ const OnlineServeForm = () => {
           handleImageUpload={handleImageUpload}
           handleYesNoChange={handleYesNoChange}
           formData={answers}
+          uploadedFiles={uploadedFiles}
         />
 
         <div className="flex justify-between mt-4">
@@ -1039,14 +1116,9 @@ const OnlineServeForm = () => {
             </button>
           </div>
         )}
-        {error && (
-          <p className="text-red-500 text-sm mt-4 text-center">
-            {lang === "mr"
-              ? `त्रुटी: ${error?.data?.message || "Unknown error"}`
-              :   `Error: ${error?.data?.message || "Unknown error"}`}
-          </p>
-        )}
+        
       </div>
+      <ToastContainer />
     </div>
   );
 };

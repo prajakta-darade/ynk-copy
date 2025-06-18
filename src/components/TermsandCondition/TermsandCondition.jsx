@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubmitFormMutation } from '../../store/formApi';
 import { useUser } from '../context/UserContext';
 import { TermsandConditionQuestion as config, terms } from './TermsandConditionQuestion';
 import useCurrentTime from '../hook/useCurrentTime';
-import logo from '../../assets/logo.png'; // Fixed import syntax
+import logo from '../../assets/logo.png';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Import toastify CSS
 
 function TermsandCondition() {
   const navigate = useNavigate();
@@ -14,10 +16,11 @@ function TermsandCondition() {
   const [language, setLanguage] = useState('en');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const errorRef = useRef(null);
+
   const [submitForm, { isLoading, error: apiError }] = useSubmitFormMutation();
   const { formatDateTime } = useCurrentTime();
 
-  // Redirect if user data is missing
   useEffect(() => {
     if (!user?.name || !user?.mobile || !user?.branch) {
       navigate('/contact-info');
@@ -42,7 +45,15 @@ function TermsandCondition() {
   const handleSubmit = async () => {
     const allChecked = terms.every((term) => checkedTerms[term.id]);
     if (!allChecked || !agreement || agreement === 'no') {
-      setError(language === 'en' ? 'Please agree to all terms.' : 'कृपया सर्व अटींना सहमती द्या.');
+      const errorMessage = language === 'en' ? 'Please agree to all terms.' : 'कृपया सर्व अटींना सहमती द्या.';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
       return;
     }
 
@@ -52,6 +63,7 @@ function TermsandCondition() {
     formData.append('name', user.name);
     formData.append('mobile', user.mobile);
     formData.append('branch', user.branch);
+    formData.append('submitted_at', formatDateTime(language));
     Object.entries(checkedTerms).forEach(([key, value]) => {
       formData.append(`term_${key}`, value ? 'yes' : 'no');
     });
@@ -60,8 +72,17 @@ function TermsandCondition() {
     try {
       await submitForm(formData).unwrap();
       setIsSubmitted(true);
+      toast.success(language === 'en' ? 'Terms accepted successfully!' : 'अटी यशस्वीपणे स्वीकारल्या!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (err) {
-      setError(err?.data?.message || 'Unknown error');
+      const errorMessage = err?.data?.message || 'Unknown error';
+      setError(errorMessage);
+      toast.error(language === 'en' ? `Error: ${errorMessage}` : `त्रुटी: ${errorMessage}`, {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
   };
 
@@ -94,6 +115,7 @@ function TermsandCondition() {
             {language === 'en' ? 'Continue' : 'पुढे जा'}
           </button>
         </div>
+        <ToastContainer />
       </div>
     );
   }
@@ -109,7 +131,7 @@ function TermsandCondition() {
               className="h-10 w-10"
               onError={(e) => {
                 console.error('Failed to load logo:', e);
-                e.target.src = 'https://via.placeholder.com/40'; // Fallback placeholder image
+                e.target.src = 'https://via.placeholder.com/40';
               }}
             />
             <h1 className="text-xl font-bold">YNK</h1>
@@ -123,35 +145,44 @@ function TermsandCondition() {
             {language === 'mr' ? 'English' : 'मराठी'}
           </button>
         </div>
+
         <div className="px-6 py-6 bg-[#dbeeff]">
-          <h2 className="text-xl font-bold text-center text-gray-700 mb-1">{config[language].title}</h2>
-          <table className="w-full border border-gray-300 text-sm mb-6">
-            <thead className="bg-blue-100">
-              <tr>
-                {config[language].tableHeaders.map((header, idx) => (
-                  <th key={idx} className="border p-2">{header}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {terms.map((term) => (
-                <tr key={term.id}>
-                  <td className="border p-2">{term.id}</td>
-                  <td className="border p-2">{language === 'en' ? term.description_en : term.description_mr}</td>
-                  <td className="border p-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={!!checkedTerms[term.id]}
-                      onChange={() => handleCheckboxChange(term.id)}
-                      className="w-4 h-4 accent-blue-600"
-                      disabled={isLoading}
-                    />
-                  </td>
+          <h2 className="text-xl font-bold text-center text-gray-700 mb-2">{config[language].title}</h2>
+          <p className="text-center text-sm text-gray-600 mb-4">
+            {Object.keys(checkedTerms).length} / {terms.length}{' '}
+            {language === 'en' ? 'terms accepted' : 'अटी स्वीकारल्या'}
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border border-gray-300 text-sm mb-6 min-w-[400px]">
+              <thead className="bg-blue-100">
+                <tr>
+                  {config[language].tableHeaders.map((header, idx) => (
+                    <th key={idx} className="border p-2">{header}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="flex items-center gap-6 mb-6">
+              </thead>
+              <tbody>
+                {terms.map((term) => (
+                  <tr key={term.id}>
+                    <td className="border p-2 text-center">{term.id}</td>
+                    <td className="border p-2">{language === 'en' ? term.description_en : term.description_mr}</td>
+                    <td className="border p-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={!!checkedTerms[term.id]}
+                        onChange={() => handleCheckboxChange(term.id)}
+                        className="w-4 h-4 accent-blue-600"
+                        disabled={isLoading}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center gap-6 mb-6 flex-wrap">
             <p className="text-gray-700">{config[language].question}</p>
             <label className="flex items-center gap-2">
               <input
@@ -174,6 +205,7 @@ function TermsandCondition() {
               {config[language].no}
             </label>
           </div>
+
           <div className="flex justify-center">
             <button
               onClick={handleSubmit}
@@ -185,16 +217,20 @@ function TermsandCondition() {
               {isLoading ? (language === 'en' ? 'Submitting...' : 'सबमिट करत आहे...') : config[language].submit}
             </button>
           </div>
-          {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
-          {apiError && (
-            <p className="text-red-500 mt-4 text-center">
-              {language === 'mr'
-                ? `त्रुटी: ${apiError?.data?.message || 'Unknown error'}`
-                : `Error: ${apiError?.data?.message || 'Unknown error'}`}
-            </p>
-          )}
+
+          <div ref={errorRef}>
+        
+            {apiError && (
+              <p className="text-red-500 mt-4 text-center">
+                {language === 'mr'
+                  ? `त्रुटी: ${apiError?.data?.message || 'Unknown error'}`
+                  : `Error: ${apiError?.data?.message || 'Unknown error'}`}
+              </p>
+            )}
+          </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }

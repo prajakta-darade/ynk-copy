@@ -3,11 +3,15 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useSubmitFormMutation } from "../../store/formApi";
 import InternalDeprmentWorkingQuestion from "./InternalDeprmentWorkingQuestion";
-import logo from "../../assets/logo.png"; 
+import logo from "../../assets/logo.png";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const {
   formConfig,
   validationMessages,
-} =InternalDeprmentWorkingQuestion ;
+} = InternalDeprmentWorkingQuestion;
+
 export default function InternalDepartmentWorking() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({});
@@ -18,7 +22,6 @@ export default function InternalDepartmentWorking() {
 
   const totalQuestions = formConfig.fields.length;
 
- 
   const validateCurrentField = (field) => {
     const newErrors = {};
     const id = field.id;
@@ -66,7 +69,16 @@ export default function InternalDepartmentWorking() {
     const validationErrors = validateCurrentField(currentField);
 
     if (Object.keys(validationErrors).length > 0) {
-      window.alert(validationMessages[language].answerRequired);
+      toast.error(validationMessages[language].answerRequired, {
+        position: "top-right",
+        autoClose: 3000,
+        closeButton: true, // Explicitly enable close button
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        rtl: false, // Force LTR for proper Marathi layout
+      });
       setErrors(validationErrors);
       return;
     }
@@ -77,18 +89,27 @@ export default function InternalDepartmentWorking() {
     } else {
       const allErrors = validateAllFields();
       if (Object.keys(allErrors).length > 0) {
-        window.alert(validationMessages[language].answerRequired);
+        toast.error(validationMessages[language].answerRequired, {
+          position: "top-right",
+          autoClose: 3000,
+          closeButton: true, // Explicitly enable close button
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          rtl: false, // Force LTR for proper Marathi layout
+        });
         setErrors(allErrors);
         return;
       }
 
       const formattedData = new FormData();
-      formattedData.append('formId', 'internal_department_working');
-      formattedData.append('language', language);
+      formattedData.append("formId", "internal_department_working");
+      formattedData.append("language", language);
       // Hardcoded user data - replace with dynamic data later
-      formattedData.append('name', 'Test User');
-      formattedData.append('mobile', '1234567890');
-      formattedData.append('branch', 'Test Branch');
+      formattedData.append("name", "Test User");
+      formattedData.append("mobile", "1234567890");
+      formattedData.append("branch", "Test Branch");
 
       formConfig.fields.forEach((field) => {
         const question = field[`question_${language}`] || field.question_mr;
@@ -111,13 +132,32 @@ export default function InternalDepartmentWorking() {
 
       try {
         await submitForm(formattedData).unwrap();
-        window.alert(validationMessages[language].submitSuccess);
-        navigate('/inspection-checklist');
+        toast.success(validationMessages[language].submitSuccess, {
+          position: "top-right",
+          autoClose: 3000,
+          closeButton: true, // Explicitly enable close button
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          rtl: false, // Force LTR for proper Marathi layout
+        });
+        navigate("/inspection-checklist");
       } catch (err) {
-        window.alert(
+        toast.error(
           language === "mr"
-            ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || 'Unknown error'}`
-            : `Error submitting form: ${err?.data?.message || 'Unknown error'}`
+            ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || "Unknown error"}`
+            : `Error submitting form: ${err?.data?.message || "Unknown error"}`,
+          {
+            position: "top-right",
+            autoClose: 3000,
+            closeButton: true, // Explicitly enable close button
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            rtl: false, // Force LTR for proper Marathi layout
+          }
         );
       }
     }
@@ -178,26 +218,24 @@ export default function InternalDepartmentWorking() {
               </span>
             </label>
 
-          {formData[id] === "other" && (
-  <div className="ml-6">
-    <input
-      type="text"
-      value={formData[`${id}_other`] || ""}
-      onChange={(e) =>
-        setFormData((prev) => ({
-          ...prev,
-          [`${id}_other`]: e.target.value,
-        }))
-      }
-      placeholder={language === "mr" ? "तपशील लिहा" : "Please specify"}
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-)}
-
+            {formData[id] === "other" && (
+              <div className="ml-6">
+                <input
+                  type="text"
+                  value={formData[`${id}_other`] || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [`${id}_other`]: e.target.value,
+                    }))
+                  }
+                  placeholder={language === "mr" ? "तपशील लिहा" : "Please specify"}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
           </div>
         </div>
-       
       </div>
     );
   };
@@ -205,73 +243,75 @@ export default function InternalDepartmentWorking() {
   const currentField = formConfig.fields[currentQuestionIndex];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-[#e3f2fd] p-6 rounded-xl shadow-md">
-     
-   <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
-           <div className="flex items-center space-x-3">
-             <img src={logo} alt="YNK Logo" className="h-10 w-10" />
-             <h1 className="text-xl font-bold">YNK</h1>
-           </div>
-           <button
+    <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false} // Set to false for LTR (Marathi is LTR)
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-lg bg-[#e3f2fd] p-6 rounded-xl shadow-md">
+          <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="YNK Logo" className="h-10 w-10" />
+              <h1 className="text-xl font-bold">YNK</h1>
+            </div>
+            <button
               onClick={handleLanguageToggle}
-             className="text-sm text-gray-600 underline hover:text-blue-600" disabled={isLoading}
-           >
-             {language === 'mr' ? 'English' : 'मराठी'}
-           </button>
-         </div>
- 
+              className="text-sm text-gray-600 underline hover:text-blue-600"
+              disabled={isLoading}
+            >
+              {language === "mr" ? "English" : "मराठी"}
+            </button>
+          </div>
 
- 
- 
+          <h2 className="text-lg text-center font-bold mb-4">
+            {formConfig[`title_${language}`]}
+          </h2>
 
+          <div className="mb-4">{renderField(currentField)}</div>
 
-
-        <h2 className="text-lg text-center font-bold mb-4">
-          {formConfig[`title_${language}`]}
-        </h2>
-
-        <div className="mb-4">{renderField(currentField)}</div>
-
-        <div className="flex justify-between mt-4">
-          <button
-            onClick={handleBack}
-            className="text-gray-500 underline disabled:text-gray-300 hover:text-blue-600"
-            disabled={currentQuestionIndex === 0 || isLoading}
-          >
-            {formConfig.navigation_buttons?.[`back_${language}`] ||
-              (language === "mr" ? "मागे" : "Back")}
-          </button>
-          <button
-            onClick={handleNext}
-            className={`${
-              currentQuestionIndex < totalQuestions - 1
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-green-600 hover:bg-green-700"
-            } text-white px-4 py-2 rounded font-medium ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            disabled={isLoading}
-          >
-            {isLoading
-              ? language === "mr"
-                ? "सबमिट करत आहे..."
-                : "Submitting..."
-              : currentQuestionIndex < totalQuestions - 1
-              ? formConfig.navigation_buttons?.[`next_${language}`] ||
-                (language === "mr" ? "पुढे" : "Next")
-              : formConfig[`submit_button_${language}`] ||
-                (language === "mr" ? "सबमिट करा" : "Submit")}
-          </button>
+          <div className="flex justify-between mt-4">
+            <button
+              onClick={handleBack}
+              className="text-gray-500 underline disabled:text-gray-300 hover:text-blue-600"
+              disabled={currentQuestionIndex === 0 || isLoading}
+            >
+              {formConfig.navigation_buttons?.[`back_${language}`] ||
+                (language === "mr" ? "मागे" : "Back")}
+            </button>
+            <button
+              onClick={handleNext}
+              className={`${
+                currentQuestionIndex < totalQuestions - 1
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-green-600 hover:bg-green-700"
+              } text-white px-4 py-2 rounded font-medium ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
+            >
+              {isLoading
+                ? language === "mr"
+                  ? "सबमिट करत आहे..."
+                  : "Submitting..."
+                : currentQuestionIndex < totalQuestions - 1
+                ? formConfig.navigation_buttons?.[`next_${language}`] ||
+                  (language === "mr" ? "पुढे" : "Next")
+                : formConfig[`submit_button_${language}`] ||
+                  (language === "mr" ? "सबमिट करा" : "Submit")}
+            </button>
+          </div>
+        
         </div>
-        {error && (
-          <p className="text-red-500 text-sm mt-4">
-            {language === "mr"
-              ? `त्रुटी: ${error?.data?.message || 'Unknown error'}`
-              : `Error: ${error?.data?.message || 'Unknown error'}`}
-          </p>
-        )}
       </div>
-    </div>
+    </>
   );
 }

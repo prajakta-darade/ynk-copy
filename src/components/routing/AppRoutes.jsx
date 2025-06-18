@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ContactInfo from "../ContactInfo";
+import LoginForms from "../LoginFroms"; // Updated import
 import TermsandCondition from "../TermsandCondition/TermsandCondition";
 import ShopSetupChecklistForm from "../ShopSetupChecklistForm/ShopSetupChecklistForm";
 import OnlineSurveyForm from "../OnlineSurveyForm/OnlineSurveyForm";
@@ -11,7 +12,7 @@ import InspectionChecklist from "../InspectionChecklist/InspectionChecklist";
 import ProjectWorkFollowup from "../ProjectWorkFollowup/ProjectWorkFollowup";
 import Dashboard from "../dashboard/Dashboard";
 import Admin from "../Admin";
-
+import ForgotPassword from "../ForgotPassword"; // Updated import
 const AppRoutes = ({ language, toggleLanguage }) => {
   return (
     <Routes>
@@ -21,16 +22,24 @@ const AppRoutes = ({ language, toggleLanguage }) => {
         element={<ContactInfo language={language} toggleLanguage={toggleLanguage} />}
       />
       <Route
+        path="/login"
+        element={<LoginForms language={language} toggleLanguage={toggleLanguage} />}
+      />
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword language={language} toggleLanguage={toggleLanguage} />}
+      />
+      <Route
+        path="/dashboard"
+        element={<Dashboard language={language} toggleLanguage={toggleLanguage} />}
+      />
+      <Route
         path="/terms-and-condition"
         element={<TermsandCondition language={language} />}
       />
       <Route
         path="/shop-setup-checklist"
         element={<ShopSetupChecklistForm language={language} />}
-      />
-      <Route
-        path="/dashboard"
-        element={<Dashboard language={language} toggleLanguage={toggleLanguage} />}
       />
       <Route
         path="/online-survey"

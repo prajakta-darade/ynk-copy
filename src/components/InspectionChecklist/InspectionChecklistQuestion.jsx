@@ -339,10 +339,7 @@
       titleFirst: "Inspection Checklist",
       titleSecond: "Flooring and Tiles Checklist",
       titleThird: "Owner Civil Work",
-      branchName: "Branch Name: A.B. Road, Indore",
-      ownerName: "Owner Name: Mr. Raj Anil Sisodiya",
-      dateLabel: "Date: 3/21/2024",
-      mobileLabel: "Mobile Number: 9131312816",
+    
       tableHeaders: [
         "No",
         "Item",
@@ -362,10 +359,7 @@
       titleFirst: "तपासणी चेकलिस्ट",
       titleSecond: "फ्लोअरिंग आणि टाइल्स चेकलिस्ट",
       titleThird: "मालक सिव्हिल वर्क",
-      branchName: "शाखेचे नाव: ए.बी. रोड, इंदूर",
-      ownerName: "मालकाचे नाव: श्री. राज अनिल सिसोदिया",
-      dateLabel: "तारीख: ३/२१/२०२४",
-      mobileLabel: "मोबाइल नंबर: ९१३१३१२८१६",
+    
       tableHeaders: [
         "अनु. क्र.",
         "आयटम",

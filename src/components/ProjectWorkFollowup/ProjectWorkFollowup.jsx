@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useSubmitFormMutation } from "../../store/formApi";
 import ProjectWorkFollowupQuestion from "./ProjectWorkFollowupQuestion";
 import logo from "../../assets/logo.png"; // Adjust the path as necessary
-const { formConfig ,validationMessages} = ProjectWorkFollowupQuestion;
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
 
-
+const { formConfig, validationMessages } = ProjectWorkFollowupQuestion;
 
 export default function ProjectWorkFollowup() {
   const navigate = useNavigate();
@@ -145,7 +146,10 @@ export default function ProjectWorkFollowup() {
     const errorMessages = validateField(currentField, currentFieldData);
 
     if (errorMessages.length > 0) {
-      window.alert(errorMessages.join("\n"));
+      toast.error(errorMessages.join("\n"), {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
@@ -153,59 +157,101 @@ export default function ProjectWorkFollowup() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       const formattedData = new FormData();
-      formattedData.append('formId', 'project_work_followup');
-      formattedData.append('language', language);
+      formattedData.append("formId", "project_work_followup");
+      formattedData.append("language", language);
       // Hardcoded user data - replace with dynamic data later
-      formattedData.append('name', 'Test User');
-      formattedData.append('mobile', '1234567890');
-      formattedData.append('branch', 'Test Branch');
+      formattedData.append("name", "Test User");
+      formattedData.append("mobile", "1234567890");
+      formattedData.append("branch", "Test Branch");
 
       formConfig.fields.forEach((field, fieldIndex) => {
         const fieldData = formData[field.id];
         const question = field[`question_${language}`] || field.question_mr;
-        const answer = fieldData?.answer === true
-          ? (language === "mr" ? "होय" : "Yes")
-          : fieldData?.answer === false
-          ? (language === "mr" ? "नाही" : "No")
-          : (language === "mr" ? "उत्तर दिले नाही" : "Not answered");
-        
+        const answer =
+          fieldData?.answer === true
+            ? language === "mr"
+              ? "होय"
+              : "Yes"
+            : fieldData?.answer === false
+            ? language === "mr"
+              ? "नाही"
+              : "No"
+            : language === "mr"
+            ? "उत्तर दिले नाही"
+            : "Not answered";
+
         formattedData.append(question, answer);
 
         if (fieldData?.answer !== undefined) {
           if (fieldData.answer === false && field.hasReason) {
-            formattedData.append(`${question} - Reason`, fieldData.reason || "Not provided");
+            formattedData.append(
+              `${question} - Reason`,
+              fieldData.reason || "Not provided"
+            );
           }
           if (fieldData.answer === true) {
             if (field.type === "yesno_with_media" && fieldData.media) {
               formattedData.append(`${question} - Media`, fieldData.media);
             }
             if (field.hasChannelSize) {
-              formattedData.append(`${question} - Channel Size`, fieldData.channelSize || "Not provided");
-              formattedData.append(`${question} - Support Size`, fieldData.supportSize || "Not provided");
+              formattedData.append(
+                `${question} - Channel Size`,
+                fieldData.channelSize || "Not provided"
+              );
+              formattedData.append(
+                `${question} - Support Size`,
+                fieldData.supportSize || "Not provided"
+              );
             }
             if (field.hasSpecialInfo) {
-              formattedData.append(`${question} - Special Info (CCTV, Serial No., Password)`, fieldData.specialInfo || "Not provided");
-              formattedData.append(`${question} - Shop Video`, fieldData.shopVideo || "Not provided");
-              formattedData.append(`${question} - Info Board`, fieldData.infoBoard || "Not provided");
+              formattedData.append(
+                `${question} - Special Info (CCTV, Serial No., Password)`,
+                fieldData.specialInfo || "Not provided"
+              );
+              formattedData.append(
+                `${question} - Shop Video`,
+                fieldData.shopVideo || "Not provided"
+              );
+              formattedData.append(
+                `${question} - Info Board`,
+                fieldData.infoBoard || "Not provided"
+              );
             }
             if (field.subQuestions) {
               field.subQuestions.forEach((subQ, subIndex) => {
                 const subFieldData = fieldData.subQuestions?.[subQ.id];
                 const subQuestion = subQ[`question_${language}`] || subQ.question_mr;
-                const subAnswer = subFieldData?.answer === true
-                  ? (language === "mr" ? "होय" : "Yes")
-                  : subFieldData?.answer === false
-                  ? (language === "mr" ? "नाही" : "No")
-                  : (language === "mr" ? "उत्तर दिले नाही" : "Not answered");
-                
+                const subAnswer =
+                  subFieldData?.answer === true
+                    ? language === "mr"
+                      ? "होय"
+                      : "Yes"
+                    : subFieldData?.answer === false
+                    ? language === "mr"
+                      ? "नाही"
+                      : "No"
+                    : language === "mr"
+                    ? "उत्तर दिले नाही"
+                    : "Not answered";
+
                 formattedData.append(`${question} - ${subQuestion}`, subAnswer);
 
                 if (subFieldData?.answer !== undefined) {
                   if (subFieldData.answer === false && subQ.hasReason) {
-                    formattedData.append(`${question} - ${subQuestion} - Reason`, subFieldData.reason || "Not provided");
+                    formattedData.append(
+                      `${question} - ${subQuestion} - Reason`,
+                      subFieldData.reason || "Not provided"
+                    );
                   }
-                  if (subFieldData.answer === true && subQ.type === "yesno_with_media" && subFieldData.media) {
-                    formattedData.append(`${question} - ${subQuestion} - Media`, subFieldData.media);
+                  if (
+                    subFieldData.answer === true &&
+                    subQ.type === "yesno_with_media" &&
+                    subFieldData.media
+                  ) {
+                    formattedData.append(
+                      `${question} - ${subQuestion} - Media`,
+                      subFieldData.media
+                    );
                   }
                 }
               });
@@ -216,14 +262,20 @@ export default function ProjectWorkFollowup() {
 
       try {
         await submitForm(formattedData).unwrap();
-        window.alert(validationMessages[language].submitSuccess);
-        navigate('/material-checklist');
+        toast.success(validationMessages[language].submitSuccess, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        navigate("/material-checklist");
       } catch (err) {
-        window.alert(
+        const errorMessage =
           language === "mr"
-            ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || 'Unknown error'}`
-            : `Error submitting form: ${err?.data?.message || 'Unknown error'}`
-        );
+            ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || "Unknown error"}`
+            : `Error submitting form: ${err?.data?.message || "Unknown error"}`;
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     }
   };
@@ -244,9 +296,7 @@ export default function ProjectWorkFollowup() {
 
     return (
       <div className="">
-        <p className="text-gray-700 text-base mb-4 leading-relaxed">
-          {question}
-        </p>
+        <p className="text-gray-700 text-base mb-4 leading-relaxed">{question}</p>
 
         <div className="space-y-3 mb-4">
           <label className="flex items-center">
@@ -406,77 +456,86 @@ export default function ProjectWorkFollowup() {
                 </div>
               </div>
             )}
-{isYesSelected && field.type === "yesno_with_media" && (
-  <div className="mb-4">
-    <label className="block text-sm font-medium mb-2 text-gray-700">
-      {language === "mr" ? "फोटो किंवा व्हिडिओ" : "Photo or Video"}
-    </label>
-    <div className="flex justify-between items-center gap-4">
-      {field.image && (
-        <img
-          src={field.image}
-          alt="Question related visual"
-          className="w-36 h-auto rounded"
-        />
-      )}
-      <input
-        type="file"
-        accept="image/*,video/*"
-        className="w-full text-gray-600 border border-gray-300 rounded px-3 py-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        style={{
-          fontSize: "16px",
-          color: "#333",
-          backgroundColor: "#fff",
-        }}
-        onChange={(e) =>
-          handleInputChange(id, "media", e.target.files[0], parentId)
-        }
-        disabled={isLoading}
-        aria-label={language === "mr" ? "फोटो किंवा व्हिडिओ" : "Photo or Video"}
-      />
-    </div>
-  </div>
-)}
-
-{(isYesSelected || currentFieldData?.answer === false) && field.hasReason && (
-  <div className="mb-4">
-    <label className="block text-sm font-medium mb-2 text-gray-700">
-      {language === "mr" ? "कारण" : "Reason"}
-    </label>
-    <textarea
-      className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-      rows="3"
-      placeholder={language === "mr" ? "कारण लिहा..." : "Write reason..."}
-      value={currentFieldData?.reason || ""}
-      onChange={(e) =>
-        handleInputChange(id, "reason", e.target.value, parentId)
-      }
-      disabled={isLoading}
-    />
-  </div>
-)}
-
-{formData[id] === "other" && (
-  <div className="ml-6 mb-4">
-    <label className="block text-sm font-medium mb-2 text-gray-700">
-      {language === "mr" ? "तपशील" : "Other Details"}
-    </label>
-    <input
-      type="text"
-      value={formData[`${id}_other`] || ""}
-      onChange={(e) =>
-        setFormData((prev) => ({
-          ...prev,
-          [`${id}_other`]: e.target.value,
-        }))
-      }
-      placeholder={language === "mr" ? "तपशील लिहा" : "Please specify"}
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-)}
-
-
+            {isYesSelected && field.type === "yesno_with_media" && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  {language === "mr" ? "फोटो किंवा व्हिडिओ" : "Photo or Video"}
+                </label>
+                <div className="flex justify-between items-center gap-4">
+                  {field.image && (
+                    <img
+                      src={field.image}
+                      alt="Question related visual"
+                      className="w-36 h-auto rounded"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    className="w-full text-gray-600 border border-gray-300 rounded px-3 py-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      fontSize: "16px",
+                      color: "#333",
+                      backgroundColor: "#fff",
+                    }}
+                    onChange={(e) =>
+                      handleInputChange(id, "media", e.target.files[0], parentId)
+                    }
+                    disabled={isLoading}
+                    aria-label={
+                      language === "mr" ? "फोटो किंवा व्हिडिओ" : "Photo or Video"
+                    }
+                  />
+                </div>
+                {currentFieldData?.media && (
+                  <p className="mt-2 text-gray-600 text-sm">
+                    {language === "mr" ? "फाइल निवडली: " : "File selected: "}
+                    {currentFieldData.media.name}
+                  </p>
+                )}
+              </div>
+            )}
+            {(isYesSelected || currentFieldData?.answer === false) &&
+              field.hasReason && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {language === "mr" ? "कारण" : "Reason"}
+                  </label>
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder={
+                      language === "mr" ? "कारण लिहा..." : "Write reason..."
+                    }
+                    value={currentFieldData?.reason || ""}
+                    onChange={(e) =>
+                      handleInputChange(id, "reason", e.target.value, parentId)
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+            {formData[id] === "other" && (
+              <div className="ml-6 mb-4">
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  {language === "mr" ? "तपशील" : "Other Details"}
+                </label>
+                <input
+                  type="text"
+                  value={formData[`${id}_other`] || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [`${id}_other`]: e.target.value,
+                    }))
+                  }
+                  placeholder={
+                    language === "mr" ? "तपशील लिहा" : "Please specify"
+                  }
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
             {isYesSelected && field.subQuestions && (
               <div className="ml-4 border-l-2 border-gray-200 pl-4 mt-4">
                 {field.subQuestions.map((subQ) => (
@@ -497,20 +556,31 @@ export default function ProjectWorkFollowup() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-[#e3f2fd] p-6 rounded-xl shadow-md">
-          <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
-                  <div className="flex items-center space-x-3">
-                    <img src={logo} alt="YNK Logo" className="h-10 w-10" />
-                    <h1 className="text-xl font-bold">YNK</h1>
-                  </div>
-                  <button
-                     onClick={handleLanguageToggle}
-                    className="text-sm text-gray-600 underline hover:text-blue-600" disabled={isLoading}
-                  >
-                    {language === 'mr' ? 'English' : 'मराठी'}
-                  </button>
-                </div>
-        
-       
+        <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
+          <div className="flex items-center space-x-3">
+            <img
+              src={logo}
+              alt="YNK Logo"
+              className="h-10 w-10"
+              onError={(e) => {
+                console.error("Failed to load logo:", e);
+                e.target.src = "https://via.placeholder.com/40";
+              }}
+            />
+            <h1 className="text-xl font-bold">YNK</h1>
+          </div>
+          <button
+            onClick={handleLanguageToggle}
+            className="text-sm text-gray-600 underline hover:text-blue-600"
+            disabled={isLoading}
+            aria-label={
+              language === "mr" ? "Switch to English" : "Switch to Marathi"
+            }
+          >
+            {language === "mr" ? "English" : "मराठी"}
+          </button>
+        </div>
+
         <h2 className="text-center text-lg font-semibold mb-6 text-gray-800">
           {formConfig[`title_${language}`]}
         </h2>
@@ -520,7 +590,7 @@ export default function ProjectWorkFollowup() {
         <div className="flex justify-between items-center">
           <button
             onClick={handleBack}
-           className="text-gray-500 underline disabled:text-gray-300 hover:text-blue-600"
+            className="text-gray-500 underline disabled:text-gray-300 hover:text-blue-600"
             disabled={currentQuestionIndex === 0 || isLoading}
           >
             {language === "mr" ? "मागे" : "Back"}
@@ -549,14 +619,9 @@ export default function ProjectWorkFollowup() {
               : "Submit"}
           </button>
         </div>
-        {error && (
-          <p className="text-red-500 text-sm mt-4 text-center">
-            {language === "mr"
-              ? `त्रुटी: ${error?.data?.message || 'Unknown error'}`
-              : `Error: ${error?.data?.message || 'Unknown error'}`}
-          </p>
-        )}
+     
       </div>
+      <ToastContainer />
     </div>
   );
 }

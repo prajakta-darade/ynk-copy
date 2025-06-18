@@ -301,11 +301,7 @@
 
   const config = {
     en: {
-      title: "Nadbrahma Idli Material List",
-      branchName: "Branch Name: A.B. Road, Indore",
-      ownerName: "Owner Name: Mr. Raj Anil Sisodiya",
-      dateLabel: `Date: ${new Date().toLocaleDateString('en-GB')}`,
-      mobileLabel: "Mobile Number: 9133128816",
+    
       tableHeaders: [
         "No",
         "Particulars",
@@ -329,11 +325,7 @@
       errorMessage: "Error submitting form!",
     },
     mr: {
-      title: "नादब्रह्मा इडली मटेरियल यादी",
-      branchName: "शाखेचे नाव: ए.बी. रोड, इंदूर",
-      ownerName: "मालकाचे नाव: श्री. राज अनिल सिसोदिया",
-      dateLabel: `तारीख: ${new Date().toLocaleDateString('en-GB')}`,
-      mobileLabel: "मोबाइल क्रमांक: ९१३३१२८८१६",
+    
       tableHeaders: [
         "अनु. क्र.",
         "विशेष",

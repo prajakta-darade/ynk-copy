@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useSubmitFormMutation } from "../../store/formApi";
 import CivilWorkChecklistFormQuestion from "./CivilWorkChecklistFormQuestion";
 import logo from "../../assets/logo.png";
+import { ToastContainer, toast } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
+
 const {
   equipmentConfig,
   questions,
@@ -19,6 +22,7 @@ const {
   tableData10,
   config,
 } = CivilWorkChecklistFormQuestion;
+
 export default function CivilWorkChecklistForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -85,7 +89,23 @@ export default function CivilWorkChecklistForm() {
     const validationErrors = validateCurrentStep();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      alert(validationErrors[questions[step - 1].key]);
+      toast.error(validationErrors[questions[step - 1].key], {
+        position: "top-right",
+        autoClose: 3000,
+        style: {
+          backgroundColor: "#ffffff",
+          color: "#d32f2f",
+          borderLeft: "4px solid #d32f2f",
+          borderRadius: "4px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          padding: "10px 15px",
+          minHeight: "40px",
+          display: "flex",
+         
+          
+        },
+ 
+      });
       return;
     }
 
@@ -100,18 +120,31 @@ export default function CivilWorkChecklistForm() {
       setStep((prev) => prev - 1);
       setErrors({});
     }
-
-
-    
   };
+
   const handleSubmit = async () => {
     const validationErrors = validateAllQuestions();
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join("\n");
-      alert(
+      toast.warn(
         language === "mr"
           ? `कृपया खालील प्रश्नांची उत्तरे द्या:\n${errorMessages}`
-          : `Please answer the following questions:\n${errorMessages}`
+          : `Please answer the following questions:\n${errorMessages}`,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          style: {
+            backgroundColor: "#ffffff",
+          color: "#d32f2f",
+          borderLeft: "4px solid #d32f2f",
+          borderRadius: "4px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          padding: "10px 15px",
+          minHeight: "40px",
+          display: "flex",
+          },
+        
+        }
       );
       const firstUnanswered = questions.find((q) => formData[q.key] === null);
       if (firstUnanswered) {
@@ -149,17 +182,45 @@ export default function CivilWorkChecklistForm() {
 
     try {
       await submitForm(formattedData).unwrap();
-      alert(
+      toast.success(
         language === "mr"
           ? "फॉर्म यशस्वीरित्या सबमिट झाला!"
-          : "Form submitted successfully!"
+          : "Form submitted successfully!",
+        {
+          position: "top-right",
+          autoClose: 3000,
+          style: {
+            backgroundColor: "#ffffff",
+            color: "#2e7d32",
+            borderLeft: "4px solid #2e7d32",
+            borderRadius: "4px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            padding: "10px 15px",
+            minHeight: "40px",
+          },
+        
+        }
       );
       navigate("/material-checklist");
     } catch (err) {
-      alert(
+      toast.error(
         language === "mr"
           ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || "Unknown error"}`
-          : `Error submitting form: ${err?.data?.message || "Unknown error"}`
+          : `Error submitting form: ${err?.data?.message || "Unknown error"}`,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          style: {
+            backgroundColor: "#ffffff",
+            color: "#d32f2f",
+            borderLeft: "4px solid #d32f2f",
+            borderRadius: "4px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            padding: "10px 15px",
+            minHeight: "40px",
+          },
+        
+        }
       );
     } finally {
       setIsSubmitting(false);
@@ -298,26 +359,19 @@ export default function CivilWorkChecklistForm() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
       <div className="w-full max-w-2xl bg-[#e3f2fd] p-6 rounded-xl shadow-md">
-
-
-<div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
+        <div className="bg-white flex justify-between items-center mb-4 px-3 py-2 rounded">
           <div className="flex items-center space-x-3">
             <img src={logo} alt="YNK Logo" className="h-10 w-10" />
             <h1 className="text-xl font-bold">YNK</h1>
           </div>
           <button
-              onClick={handleLanguageToggle}
-            className="text-sm text-gray-600 underline hover:text-blue-600" disabled={isLoading}
+            onClick={handleLanguageToggle}
+            className="text-sm text-gray-600 underline hover:text-blue-600"
+            disabled={isLoading}
           >
-            {language === 'mr' ? 'English' : 'मराठी'}
+            {language === "mr" ? "English" : "मराठी"}
           </button>
         </div>
-
-
-
-
-
-
 
         <h2 className="text-center text-lg font-semibold mb-6">
           {equipmentConfig[`title_${language}`]}
@@ -355,7 +409,7 @@ export default function CivilWorkChecklistForm() {
                     >
                       {isSubmitting || isLoading
                         ? language === "mr"
-                          ? "सबमिट करत आहे..."
+                          ? "सबमिट करीत आहे..."
                           : "Submitting..."
                         : equipmentConfig[`submit_button_${language}`]}
                     </button>
@@ -372,17 +426,11 @@ export default function CivilWorkChecklistForm() {
                     </button>
                   )}
                 </div>
-                {error && (
-                  <p className="text-red-500 mt-4">
-                    {language === "mr"
-                      ? `त्रुटी: ${error?.data?.message || 'Unknown error'}`
-                      : `Error: ${error?.data?.message || 'Unknown error'}`}
-                  </p>
-                )}
               </div>
             )
         )}
       </div>
+      <ToastContainer /> {/* Add ToastContainer to render toasts */}
     </div>
   );
 }
