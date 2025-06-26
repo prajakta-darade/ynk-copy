@@ -72,12 +72,12 @@ export default function InternalDepartmentWorking() {
       toast.error(validationMessages[language].answerRequired, {
         position: "top-right",
         autoClose: 3000,
-        closeButton: true, // Explicitly enable close button
+        closeButton: true,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        rtl: false, // Force LTR for proper Marathi layout
+        rtl: false,
       });
       setErrors(validationErrors);
       return;
@@ -92,12 +92,12 @@ export default function InternalDepartmentWorking() {
         toast.error(validationMessages[language].answerRequired, {
           position: "top-right",
           autoClose: 3000,
-          closeButton: true, // Explicitly enable close button
+          closeButton: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
           progress: undefined,
-          rtl: false, // Force LTR for proper Marathi layout
+          rtl: false,
         });
         setErrors(allErrors);
         return;
@@ -106,7 +106,6 @@ export default function InternalDepartmentWorking() {
       const formattedData = new FormData();
       formattedData.append("formId", "internal_department_working");
       formattedData.append("language", language);
-      // Hardcoded user data - replace with dynamic data later
       formattedData.append("name", "Test User");
       formattedData.append("mobile", "1234567890");
       formattedData.append("branch", "Test Branch");
@@ -130,17 +129,20 @@ export default function InternalDepartmentWorking() {
         formattedData.append(question, answer);
       });
 
+      // Log the formattedData before submission
+      console.log("Formatted Data being sent:", [...formattedData.entries()]);
+
       try {
         await submitForm(formattedData).unwrap();
         toast.success(validationMessages[language].submitSuccess, {
           position: "top-right",
           autoClose: 3000,
-          closeButton: true, // Explicitly enable close button
+          closeButton: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
           progress: undefined,
-          rtl: false, // Force LTR for proper Marathi layout
+          rtl: false,
         });
         navigate("/inspection-checklist");
       } catch (err) {
@@ -151,12 +153,12 @@ export default function InternalDepartmentWorking() {
           {
             position: "top-right",
             autoClose: 3000,
-            closeButton: true, // Explicitly enable close button
+            closeButton: true,
             closeOnClick: true,
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
-            rtl: false, // Force LTR for proper Marathi layout
+            rtl: false,
           }
         );
       }
@@ -250,7 +252,7 @@ export default function InternalDepartmentWorking() {
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
-        rtl={false} // Set to false for LTR (Marathi is LTR)
+        rtl={false}
         pauseOnFocusLoss
         draggable
         pauseOnHover
@@ -309,7 +311,6 @@ export default function InternalDepartmentWorking() {
                   (language === "mr" ? "सबमिट करा" : "Submit")}
             </button>
           </div>
-        
         </div>
       </div>
     </>

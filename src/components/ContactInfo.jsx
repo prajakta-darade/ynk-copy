@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSubmitFormMutation } from '../store/formApi';
-import { useUser } from '../components/context/UserContext';
-import { User, Phone, Building, ChevronRight, Globe, Lock } from 'lucide-react';
-import logo from '../assets/logo.png';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "./context/UserContext";
+import { User, Phone, Building, ChevronRight, Globe, Lock } from "lucide-react";
+import logo from "../assets/logo.png";
+import api from "../api/Api";
+import useCurrentTime from "./hook/useCurrentTime";
 
 const labels = {
   en: {
@@ -30,7 +30,8 @@ const labels = {
       mobileInvalid: "Please enter a valid 10-digit mobile number",
       branchRequired: "Branch is required",
       passwordRequired: "Password is required",
-      passwordInvalid: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
+      passwordInvalid:
+        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
       reenterPasswordRequired: "Re-enter password is required",
       passwordsMismatch: "Passwords do not match",
     },
@@ -48,7 +49,7 @@ const labels = {
     passwordPlaceholder: "तुमचा पासवर्ड प्रविष्ट करा",
     reenterPasswordLabel: "पासवर्ड पुन्हा प्रविष्ट करा",
     reenterPasswordPlaceholder: "पासवर्ड पुन्हा प्रविष्ट करा",
-    proceed: "नोंदणी करा", // Updated to "Register"
+    proceed: "नोंदणी करा",
     login: "आधीपासून खाते आहे? लॉगिन करा",
     error: "कृपया सर्व फील्ड भरा",
     validation: {
@@ -58,7 +59,8 @@ const labels = {
       mobileInvalid: "कृपया वैध 10-अंकी मोबाइल नंबर प्रविष्ट करा",
       branchRequired: "शाखा आवश्यक आहे",
       passwordRequired: "पासवर्ड आवश्यक आहे",
-      passwordInvalid: "पासवर्ड कमीतकमी 8 वर्णांचा असावा आणि मोठे अक्षर, लहान अक्षर, संख्या आणि विशेष चिन्ह असणे आवश्यक आहे",
+      passwordInvalid:
+        "पासवर्ड कमीतकमी 8 वर्णांचा असावा आणि मोठे अक्षर, लहान अक्षर, संख्या आणि विशेष चिन्ह असणे आवश्यक आहे",
       reenterPasswordRequired: "पासवर्ड पुन्हा प्रविष्ट करणे आवश्यक आहे",
       passwordsMismatch: "पासवर्ड जुळत नाहीत",
     },
@@ -66,63 +68,77 @@ const labels = {
 };
 
 const ContactInfo = ({ language = "en", toggleLanguage }) => {
-  const { user, setUser } = useUser();
+  const { setUser } = useUser();
   const navigate = useNavigate();
+  const { formatDateTime } = useCurrentTime();
   const [currentLanguage, setCurrentLanguage] = useState(language);
+  const [formData, setFormData] = useState({
+    name: "",
+    mobile: "",
+    branch: "",
+    password: "",
+    reenterPassword: "",
+  });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitForm, { error: apiError }] = useSubmitFormMutation();
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!user.name?.trim()) {
+    if (!formData.name.trim()) {
       newErrors.name = labels[currentLanguage].validation.nameRequired;
-    } else if (!/^[a-zA-Z\s]+$/.test(user.name.trim())) {
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.name.trim())) {
       newErrors.name = labels[currentLanguage].validation.nameInvalid;
     }
 
-    if (!user.mobile?.trim()) {
+    if (!formData.mobile.trim()) {
       newErrors.mobile = labels[currentLanguage].validation.mobileRequired;
-    } else if (!/^\d{10}$/.test(user.mobile.trim())) {
+    } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
       newErrors.mobile = labels[currentLanguage].validation.mobileInvalid;
     }
 
-    if (!user.branch?.trim()) {
+    if (!formData.branch.trim()) {
       newErrors.branch = labels[currentLanguage].validation.branchRequired;
     }
 
-    if (!user.password?.trim()) {
+    if (!formData.password.trim()) {
       newErrors.password = labels[currentLanguage].validation.passwordRequired;
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(user.password.trim())) {
+    } else if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(
+        formData.password.trim()
+      )
+    ) {
       newErrors.password = labels[currentLanguage].validation.passwordInvalid;
     }
 
-    if (!user.reenterPassword?.trim()) {
+    if (!formData.reenterPassword.trim()) {
       newErrors.reenterPassword = labels[currentLanguage].validation.reenterPasswordRequired;
-    } else if (user.password !== user.reenterPassword) {
+    } else if (formData.password !== formData.reenterPassword) {
       newErrors.reenterPassword = labels[currentLanguage].validation.passwordsMismatch;
     }
 
     return newErrors;
   };
 
-  const handleInputChange = (field, value) => {
-    if (field === "name") {
-      value = value.replace(/[^a-zA-Z\s]/g, "");
-    } else if (field === "mobile") {
-      value = value.replace(/\D/g, "");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    let sanitizedValue = value;
+    if (name === "name") {
+      sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
+    } else if (name === "mobile") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
     }
 
-    setUser((prevUser) => ({
-      ...prevUser,
-      [field]: value,
+    setFormData((prev) => ({
+      ...prev,
+      [name]: sanitizedValue,
     }));
 
-    if (errors[field]) {
+    if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
-        [field]: "",
+        [name]: "",
       }));
     }
   };
@@ -130,51 +146,52 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
   const toggleLanguageHandler = () => {
     const newLanguage = currentLanguage === "en" ? "mr" : "en";
     setCurrentLanguage(newLanguage);
-    toggleLanguage(newLanguage); // Update parent state
+    toggleLanguage(newLanguage);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log("handleSubmit triggered"); // Confirm function is called
+  setIsSubmitting(true);
 
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setIsSubmitting(false);
-      return;
-    }
+  const validationErrors = validateForm();
+  console.log("Validation errors:", validationErrors); // Log validation errors
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    setIsSubmitting(false);
+    return;
+  }
 
-    const cleanedUser = {
-      ...user,
-      name: user.name.trim(),
-      mobile: user.mobile.trim(),
-      branch: user.branch.trim(),
-      password: user.password.trim(),
-      reenterPassword: user.reenterPassword.trim(),
-    };
-
-    setUser(cleanedUser);
-
-    const formData = new FormData();
-    formData.append("name", cleanedUser.name);
-    formData.append("mobile", cleanedUser.mobile);
-    formData.append("branch", cleanedUser.branch);
-    formData.append("password", cleanedUser.password);
-    formData.append("reenterPassword", cleanedUser.reenterPassword);
-    formData.append("formId", "contact_info");
-    formData.append("language", currentLanguage);
-    formData.append("dummy_field", "This is a placeholder response");
-
-    try {
-      await submitForm(formData).unwrap();
-      setIsSubmitting(false);
-      navigate("/login");
-    } catch (error) {
-      console.error("Error submitting user data:", error);
-      setErrors({ submit: error?.data?.message || "Failed to submit user data" });
-      setIsSubmitting(false);
-    }
+  const cleanedData = {
+    name: formData.name.trim(),
+    mobile: formData.mobile.trim(),
+    branch: formData.branch.trim(),
+    password: formData.password.trim(),
   };
+
+
+  try {
+ 
+    const response = await api.post("/api/auth/register", cleanedData);
+  
+
+    setUser({ ...response.data.user, isAuthenticated: true });
+    setIsSubmitting(false);
+    alert("Registration successful! Redirecting to login..."); // Feedback
+    navigate("/login");
+  } catch (error) {
+    console.error("Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    }); // Log any errors
+    setErrors({
+      submit: error.response?.data?.message || "Failed to submit user data",
+    });
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
@@ -201,6 +218,7 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-gray-800">{labels[currentLanguage].title}</h1>
               <p className="text-gray-600 text-sm">{labels[currentLanguage].subtitle}</p>
+              <p className="text-gray-500 text-xs">{formatDateTime(currentLanguage)}</p>
             </div>
 
             <button
@@ -224,9 +242,10 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
                 </div>
                 <input
                   id="name"
+                  name="name"
                   type="text"
-                  value={user.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  value={formData.name}
+                  onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all duration-200 placeholder-gray-400 ${
                     errors.name ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
@@ -252,9 +271,10 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
                 </div>
                 <input
                   id="mobile"
+                  name="mobile"
                   type="tel"
-                  value={user.mobile || ""}
-                  onChange={(e) => handleInputChange("mobile", e.target.value)}
+                  value={formData.mobile}
+                  onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all duration-200 placeholder-gray-400 ${
                     errors.mobile ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
@@ -281,9 +301,10 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
                 </div>
                 <input
                   id="branch"
+                  name="branch"
                   type="text"
-                  value={user.branch || ""}
-                  onChange={(e) => handleInputChange("branch", e.target.value)}
+                  value={formData.branch}
+                  onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all duration-200 placeholder-gray-400 ${
                     errors.branch ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
@@ -309,9 +330,10 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
                 </div>
                 <input
                   id="password"
+                  name="password"
                   type="password"
-                  value={user.password || ""}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all duration-200 placeholder-gray-400 ${
                     errors.password ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
@@ -337,9 +359,10 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
                 </div>
                 <input
                   id="reenterPassword"
+                  name="reenterPassword"
                   type="password"
-                  value={user.reenterPassword || ""}
-                  onChange={(e) => handleInputChange("reenterPassword", e.target.value)}
+                  value={formData.reenterPassword}
+                  onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all duration-200 placeholder-gray-400 ${
                     errors.reenterPassword ? "border-red-300 bg-red-50" : "border-gray-200"
                   }`}
@@ -359,12 +382,6 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
               <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
                 <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                 {errors.submit}
-              </p>
-            )}
-            {apiError && (
-              <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
-                <span className="w-1 h-1 bg-red-600 rounded-full"></span>
-                {apiError?.data?.message || "An error occurred during submission"}
               </p>
             )}
 
@@ -391,13 +408,11 @@ const ContactInfo = ({ language = "en", toggleLanguage }) => {
             {labels[currentLanguage].login.split("Login")[0]}
             <span
               onClick={() => navigate("/login")}
-              className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text hover:bg-clip-text hover:text-transparent transition-all duration-200"
+              className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer transition-all duration-200"
             >
               Login
             </span>
           </p>
-
-         
         </div>
       </div>
     </div>

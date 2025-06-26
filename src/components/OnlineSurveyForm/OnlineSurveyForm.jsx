@@ -538,6 +538,10 @@ const OnlineServeForm = () => {
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [submitForm, { isLoading, error }] = useSubmitFormMutation();
 
+  // Assuming user data comes from a context or state management (e.g., Redux or Context API)
+  // Replace with actual user data source
+  const user = { name: "Test User", mobile: "1234567890", branch: "Test Branch" }; // Temporary fallback
+
   const questions = formConfig.fields;
   const currentQ = questions[currentIndex];
   const selectedAnswer = answers[currentQ.id];
@@ -585,7 +589,7 @@ const OnlineServeForm = () => {
       toast.error(validationMessages[lang].answerRequired, {
         position: "top-right",
         autoClose: 3000,
-        });
+      });
       return false;
     }
 
@@ -821,175 +825,142 @@ const OnlineServeForm = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    for (let i = 0; i < questions.length; i++) {
-      if (!validateQuestion(i)) {
-        setCurrentIndex(i);
-        return;
-      }
+ const handleSubmit = async () => {
+  for (let i = 0; i < questions.length; i++) {
+    if (!validateQuestion(i)) {
+      setCurrentIndex(i);
+      return;
     }
+  }
 
-    const formData = new FormData();
-    formData.append("formId", "online_survey");
-    formData.append("language", lang);
-    // Hardcoded user data - replace with dynamic data later
-    formData.append("name", "Test User");
-    formData.append("mobile", "1234567890");
-    formData.append("branch", "Test Branch");
+  const formData = new FormData();
+  formData.append("formId", "online_survey");
+  formData.append("language", lang);
+  formData.append("name", user.name || "Test User");
+  formData.append("mobile", user.mobile || "1234567890");
+  formData.append("branch", user.branch || "Test Branch");
+  formData.append("submitted_at", new Date("2025-06-24T11:19:00+05:30").toISOString());
 
-    questions.forEach((question) => {
-      const questionText =
-        lang === "mr" ? question.question_mr : question.question_en;
-      let answer = answers[question.id];
-      const followupValue = followupValues[question.id] || {};
+  questions.forEach((question) => {
+    const questionText = lang === "mr" ? question.question_mr : question.question_en;
+    let answer = answers[question.id];
+    const followupValue = followupValues[question.id] || {};
 
-      if (question.type === "yesno") {
-        answer =
-          answer === true
-            ? lang === "mr"
-              ? "होय"
-              : "Yes"
-            : answer === false
-            ? lang === "mr"
-              ? "नाही"
-              : "No"
-            : lang === "mr"
-            ? "उत्तर दिले नाही"
-            : "Not answered";
-        formData.append(questionText, answer);
+    if (question.type === "yesno") {
+      answer =
+        answer === true
+          ? lang === "mr" ? "होय" : "Yes"
+          : answer === false
+          ? lang === "mr" ? "नाही" : "No"
+          : lang === "mr" ? "उत्तर दिले नाही" : "Not answered";
+      formData.append(questionText, answer);
 
-        if (
-          answer !== (lang === "mr" ? "उत्तर दिले नाही" : "Not answered") &&
-          question.followup
-        ) {
-          const followupConfig =
-            question.followup[answers[question.id] ? "yes" : "no"];
-          if (followupConfig) {
-            if (
-              followupConfig.type === "radio" ||
-              followupConfig.type === "input"
-            ) {
-              formData.append(
-                `${questionText} - Followup`,
-                followupValue[0] || "Not answered"
-              );
-            } else if (followupConfig.type === "checkbox") {
-              formData.append(
-                `${questionText} - Followup`,
-                followupValue[0]?.join(", ") || "Not answered"
-              );
-            } else if (
-              followupConfig.type === "multi" &&
-              followupConfig.components
-            ) {
-              followupConfig.components.forEach((comp, idx) => {
-                const followupQuestion =
-                  lang === "mr" ? comp.question_mr : comp.question_en;
-                if (comp.type === "radio" || comp.type === "input") {
-                  formData.append(
-                    `${questionText} - ${followupQuestion}`,
-                    followupValue[idx] || "Not answered"
-                  );
-                } else if (comp.type === "checkbox") {
-                  formData.append(
-                    `${questionText} - ${followupQuestion}`,
-                    followupValue[idx]?.join(", ") || "Not answered"
-                  );
-                }
-              });
-            }
+      if (
+        answer !== (lang === "mr" ? "उत्तर दिले नाही" : "Not answered") &&
+        question.followup
+      ) {
+        const followupConfig = question.followup[answers[question.id] ? "yes" : "no"];
+        if (followupConfig) {
+          if (followupConfig.type === "radio" || followupConfig.type === "input") {
+            formData.append(
+              `${questionText} - Followup`,
+              followupValue[0] || "Not answered"
+            );
+          } else if (followupConfig.type === "checkbox") {
+            formData.append(
+              `${questionText} - Followup`,
+              Array.isArray(followupValue[0]) ? followupValue[0].join(", ") : followupValue[0] || "Not answered"
+            );
+          } else if (followupConfig.type === "multi" && followupConfig.components) {
+            followupConfig.components.forEach((comp, idx) => {
+              const followupQuestion = lang === "mr" ? comp.question_mr : comp.question_en;
+              if (comp.type === "radio" || comp.type === "input") {
+                formData.append(
+                  `${questionText} - ${followupQuestion}`,
+                  followupValue[idx] || "Not answered"
+                );
+              } else if (comp.type === "checkbox") {
+                formData.append(
+                  `${questionText} - ${followupQuestion}`,
+                  Array.isArray(followupValue[idx]) ? followupValue[idx].join(", ") : followupValue[idx] || "Not answered"
+                );
+              }
+            });
           }
         }
-      } else if (question.type === "radio") {
-        formData.append(
-          questionText,
-          answer || (lang === "mr" ? "उत्तर दिले नाही" : "Not answered")
-        );
-        if (answer && question.followup) {
-          const followupConfig = question.followup[answer];
-          if (followupConfig) {
-            if (
-              followupConfig.type === "radio" ||
-              followupConfig.type === "input"
-            ) {
-              formData.append(
-                `${questionText} - Followup`,
-                followupValue[0] || "Not answered"
-              );
-            } else if (followupConfig.type === "checkbox") {
-              formData.append(
-                `${questionText} - Followup`,
-                followupValue[0]?.join(", ") || "Not answered"
-              );
-            } else if (
-              followupConfig.type === "multi" &&
-              followupConfig.components
-            ) {
-              followupConfig.components.forEach((comp, idx) => {
-                const followupQuestion =
-                  lang === "mr" ? comp.question_mr : comp.question_en;
-                if (comp.type === "radio" || comp.type === "input") {
-                  formData.append(
-                    `${questionText} - ${followupQuestion}`,
-                    followupValue[idx] || "Not answered"
-                  );
-                } else if (comp.type === "checkbox") {
-                  formData.append(
-                    `${questionText} - ${followupQuestion}`,
-                    followupValue[idx]?.join(", ") || "Not answered"
-                  );
-                }
-              });
-            }
-          }
-        }
-      } else if (question.type === "input") {
-        formData.append(
-          questionText,
-          followupValue[0] ||
-            (lang === "mr" ? "उत्तर दिले नाही" : "Not answered")
-        );
       }
-    });
+    } else if (question.type === "radio") {
+      formData.append(
+        questionText,
+        answer || (lang === "mr" ? "उत्तर दिले नाही" : "Not answered")
+      );
+      if (answer && question.followup) {
+        const followupConfig = question.followup[answer];
+        if (followupConfig) {
+          if (followupConfig.type === "radio" || followupConfig.type === "input") {
+            formData.append(
+              `${questionText} - Followup`,
+              followupValue[0] || "Not answered"
+            );
+          } else if (followupConfig.type === "checkbox") {
+            formData.append(
+              `${questionText} - Followup`,
+              Array.isArray(followupValue[0]) ? followupValue[0].join(", ") : followupValue[0] || "Not answered"
+            );
+          } else if (followupConfig.type === "multi" && followupConfig.components) {
+            followupConfig.components.forEach((comp, idx) => {
+              const followupQuestion = lang === "mr" ? comp.question_mr : comp.question_en;
+              if (comp.type === "radio" || comp.type === "input") {
+                formData.append(
+                  `${questionText} - ${followupQuestion}`,
+                  followupValue[idx] || "Not answered"
+                );
+              } else if (comp.type === "checkbox") {
+                formData.append(
+                  `${questionText} - ${followupQuestion}`,
+                  Array.isArray(followupValue[idx]) ? followupValue[idx].join(", ") : followupValue[idx] || "Not answered"
+                );
+              }
+            });
+          }
+        }
+      }
+    } else if (question.type === "input") {
+      formData.append(
+        questionText,
+        followupValue[0] || (lang === "mr" ? "उत्तर दिले नाही" : "Not answered")
+      );
+    }
+  });
 
-    Object.keys(uploadedFiles).forEach((qId) => {
-      Object.keys(uploadedFiles[qId]).forEach((compIdx) => {
-        uploadedFiles[qId][compIdx].forEach((file, fileIdx) => {
-          formData.append(`files_${qId}_${compIdx}_${fileIdx}`, file);
-        });
+  Object.keys(uploadedFiles).forEach((qId) => {
+    Object.keys(uploadedFiles[qId]).forEach((compIdx) => {
+      uploadedFiles[qId][compIdx].forEach((file, fileIdx) => {
+        formData.append(`files_${qId}_${compIdx}_${fileIdx}`, file);
       });
     });
+  });
 
-    try {
-      await submitForm(formData).unwrap();
-      toast.success(
-        lang === "mr"
-          ? "फॉर्म यशस्वीरीत्या सबमिट केला!"
-          : "Form submitted successfully!",
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
-      setAnswers({});
-      setFollowupValues({});
-      setUploadedFiles({});
-      setCurrentIndex(0);
-      navigate("/shop-measurements");
-    } catch (err) {
-      toast.error(
-        lang === "mr"
-          ? `फॉर्म सबमिट करताना त्रुटी आली: ${
-              err?.data?.message || "Unknown error"
-            }`
-          : `Error submitting form: ${err?.data?.message || "Unknown error"}`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
-    }
-  };
+  try {
+    await submitForm(formData).unwrap();
+    toast.success(
+      lang === "mr" ? "फॉर्म यशस्वीरीत्या सबमिट केला!" : "Form submitted successfully!",
+      { position: "top-right", autoClose: 3000 }
+    );
+    setAnswers({});
+    setFollowupValues({});
+    setUploadedFiles({});
+    setCurrentIndex(0);
+    navigate("/shop-measurements");
+  } catch (err) {
+    toast.error(
+      lang === "mr"
+        ? `फॉर्म सबमिट करताना त्रुटी आली: ${err?.data?.message || "Unknown error"}`
+        : `Error submitting form: ${err?.data?.message || "Unknown error"}`,
+      { position: "top-right", autoClose: 3000 }
+    );
+  }
+};
 
   const handleBack = () => {
     if (currentIndex > 0) {
@@ -1116,7 +1087,6 @@ const OnlineServeForm = () => {
             </button>
           </div>
         )}
-        
       </div>
       <ToastContainer />
     </div>

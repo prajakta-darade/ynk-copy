@@ -5,8 +5,8 @@ import InspectionChecklistQuestion from "./InspectionChecklistQuestion";
 import { useUser } from "../context/UserContext";
 import useCurrentTime from "../hook/useCurrentTime";
 import logo from "../../assets/logo.png"; // Adjust the path as necessary
-import { toast, ToastContainer } from "react-toastify"; // Added import
-import "react-toastify/dist/ReactToastify.css"; // Added import
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const { firstImageData, secondImageData, thirdImageData, config } =
   InspectionChecklistQuestion;
@@ -67,7 +67,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        rtl: false, // Force LTR for proper Marathi layout
+        rtl: false,
       });
       return;
     }
@@ -115,7 +115,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        rtl: false, // Force LTR for proper Marathi layout
+        rtl: false,
       });
       return;
     }
@@ -171,7 +171,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
           pauseOnHover: true,
           draggable: true,
           progress: undefined,
-          rtl: false, // Force LTR for proper Marathi layout
+          rtl: false,
         }
       );
     } catch (err) {
@@ -189,7 +189,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
           pauseOnHover: true,
           draggable: true,
           progress: undefined,
-          rtl: false, // Force LTR for proper Marathi layout
+          rtl: false,
         }
       );
     }
@@ -197,126 +197,144 @@ function InspectionChecklist({ language, toggleLanguage }) {
 
   const renderTable = (data, tableName, title) => (
     <>
-      <table className="w-full border border-gray-300 text-sm mb-6">
-        <thead className="bg-blue-100">
-          <tr>
-            {config[language].tableHeaders.map((header, idx) => (
-              <th key={idx} className="border border-gray-300 p-2 text-left">
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => (
-            <tr
-              key={`${
-                item.no !== undefined && item.no !== null && item.no !== ""
-                  ? item.no
-                  : `index${index}`
-              }-${index}`}
-              className="hover:bg-blue-50"
-            >
-              <td className="border border-gray-300 p-2">{item.no}</td>
-              <td className="border border-gray-300 p-2">
-                {language === "en" ? item.item_en : item.item_mr}
-              </td>
-              <td className="border border-gray-300 p-2">
-                {(language === "en"
-                  ? item.checking_points_en
-                  : item.checking_points_mr
-                )?.length > 0
-                  ? (language === "en"
-                      ? item.checking_points_en
-                      : item.checking_points_mr
-                    ).join(", ")
-                  : "-"}
-              </td>
-              <td className="border border-gray-300 p-2 text-center">
-                <input
-                  type="radio"
-                  name={`${tableName}-${
-                    item.no !== undefined && item.no !== null && item.no !== ""
-                      ? item.no
-                      : `index${index}`
-                  }-${index}`}
-                  checked={
-                    checklistStatus[
-                      `${tableName}-${
-                        item.no !== undefined &&
-                        item.no !== null &&
-                        item.no !== ""
-                          ? item.no
-                          : `index${index}`
-                      }-${index}-done`
-                    ] || false
-                  }
-                  onChange={() =>
-                    handleChecklistChange(tableName, item.no, index, "done")
-                  }
-                  className="accent-gray-600"
-                />
-              </td>
-              <td className="border border-gray-300 p-2 text-center">
-                <input
-                  type="radio"
-                  name={`${tableName}-${
-                    item.no !== undefined && item.no !== null && item.no !== ""
-                      ? item.no
-                      : `index${index}`
-                  }-${index}`}
-                  checked={
-                    checklistStatus[
-                      `${tableName}-${
-                        item.no !== undefined &&
-                        item.no !== null &&
-                        item.no !== ""
-                          ? item.no
-                          : `index${index}`
-                      }-${index}-pending`
-                    ] || false
-                  }
-                  onChange={() =>
-                    handleChecklistChange(tableName, item.no, index, "pending")
-                  }
-                  className="accent-gray-600"
-                />
-              </td>
-              <td className="border border-gray-300 p-2 text-center">
-                <input
-                  type="radio"
-                  name={`${tableName}-${
-                    item.no !== undefined && item.no !== null && item.no !== ""
-                      ? item.no
-                      : `index${index}`
-                  }-${index}`}
-                  checked={
-                    checklistStatus[
-                      `${tableName}-${
-                        item.no !== undefined &&
-                        item.no !== null &&
-                        item.no !== ""
-                          ? item.no
-                          : `index${index}`
-                      }-${index}-notapplicable`
-                    ] || false
-                  }
-                  onChange={() =>
-                    handleChecklistChange(
-                      tableName,
-                      item.no,
-                      index,
-                      "notapplicable"
-                    )
-                  }
-                  className="accent-gray-600"
-                />
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full border border-gray-300 text-sm">
+          <thead className="bg-blue-100">
+            <tr>
+              {config[language].tableHeaders.map((header, idx) => (
+                <th
+                  key={idx}
+                  className="border border-gray-300 p-2 text-left whitespace-nowrap"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex justify-between px-4 text">
+          </thead>
+          <tbody>
+            {data.map((item, index) => (
+              <tr
+                key={`${
+                  item.no !== undefined && item.no !== null && item.no !== ""
+                    ? item.no
+                    : `index${index}`
+                }-${index}`}
+                className="hover:bg-blue-50"
+              >
+                <td className="border border-gray-300 p-2 whitespace-nowrap">
+                  {item.no}
+                </td>
+                <td className="border border-gray-300 p-2">
+                  {language === "en" ? item.item_en : item.item_mr}
+                </td>
+                <td className="border border-gray-300 p-2">
+                  {(language === "en"
+                    ? item.checking_points_en
+                    : item.checking_points_mr
+                  )?.length > 0
+                    ? (language === "en"
+                        ? item.checking_points_en
+                        : item.checking_points_mr
+                      ).join(", ")
+                    : "-"}
+                </td>
+                <td className="border border-gray-300 p-2 text-center">
+                  <input
+                    type="radio"
+                    name={`${tableName}-${
+                      item.no !== undefined &&
+                      item.no !== null &&
+                      item.no !== ""
+                        ? item.no
+                        : `index${index}`
+                    }-${index}`}
+                    checked={
+                      checklistStatus[
+                        `${tableName}-${
+                          item.no !== undefined &&
+                          item.no !== null &&
+                          item.no !== ""
+                            ? item.no
+                            : `index${index}`
+                        }-${index}-done`
+                      ] || false
+                    }
+                    onChange={() =>
+                      handleChecklistChange(tableName, item.no, index, "done")
+                    }
+                    className="accent-gray-600 h-4 w-4"
+                  />
+                </td>
+                <td className="border border-gray-300 p-2 text-center">
+                  <input
+                    type="radio"
+                    name={`${tableName}-${
+                      item.no !== undefined &&
+                      item.no !== null &&
+                      item.no !== ""
+                        ? item.no
+                        : `index${index}`
+                    }-${index}`}
+                    checked={
+                      checklistStatus[
+                        `${tableName}-${
+                          item.no !== undefined &&
+                          item.no !== null &&
+                          item.no !== ""
+                            ? item.no
+                            : `index${index}`
+                        }-${index}-pending`
+                      ] || false
+                    }
+                    onChange={() =>
+                      handleChecklistChange(
+                        tableName,
+                        item.no,
+                        index,
+                        "pending"
+                      )
+                    }
+                    className="accent-gray-600 h-4 w-4"
+                  />
+                </td>
+                <td className="border border-gray-300 p-2 text-center">
+                  <input
+                    type="radio"
+                    name={`${tableName}-${
+                      item.no !== undefined &&
+                      item.no !== null &&
+                      item.no !== ""
+                        ? item.no
+                        : `index${index}`
+                    }-${index}`}
+                    checked={
+                      checklistStatus[
+                        `${tableName}-${
+                          item.no !== undefined &&
+                          item.no !== null &&
+                          item.no !== ""
+                            ? item.no
+                            : `index${index}`
+                        }-${index}-notapplicable`
+                      ] || false
+                    }
+                    onChange={() =>
+                      handleChecklistChange(
+                        tableName,
+                        item.no,
+                        index,
+                        "notapplicable"
+                      )
+                    }
+                    className="accent-gray-600 h-4 w-4"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex justify-between px-4 text-sm">
         <button
           onClick={handleBack}
           className={`underline text-gray-600 hover:text-blue-800 ${
@@ -356,7 +374,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
         </div>
       </div>
       {error && (
-        <p className="text-red-500 mt-4">
+        <p className="text-red-500 mt-4 text-sm">
           {language === "mr"
             ? `त्रुटी: ${error?.data?.message || "Unknown error"}`
             : `Error: ${error?.data?.message || "Unknown error"}`}
@@ -374,14 +392,14 @@ function InspectionChecklist({ language, toggleLanguage }) {
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick
-          rtl={false} // Set to false for LTR (Marathi is LTR)
+          rtl={false}
           pauseOnFocusLoss
           draggable
           closeButton={true}
           theme="light"
         />
-        <div className="min-h-screen flex items-center justify-center bg-[#e3f2fd]">
-          <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-md text-center">
+        <div className="min-h-screen flex items-center justify-center bg-[#e3f2fd] p-4">
+          <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-lg text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-8 h-8 text-green-600"
@@ -397,24 +415,27 @@ function InspectionChecklist({ language, toggleLanguage }) {
                 />
               </svg>
             </div>
-            <h2 className="text-lg font-bold mb-2">
+            <h2 className="text-xl font-bold mb-2">
               {language === "en"
                 ? "Checklist Submitted!"
                 : "चेकलिस्ट सबमिट झाले!"}
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-4 text-sm">
               {language === "en"
                 ? "Inspection checklist has been submitted successfully."
                 : "इन्स्पेक्शन चेकलिस्ट यशस्वीरित्या सबमिट झाले आहे."}
             </p>
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 mb-4 text-sm">
               {language === "mr"
-                ? `सबमिट केले: ${formatDateTime(language).replace("दिनांक:", "")}`
+                ? `सबमिट केले: ${formatDateTime(language).replace(
+                    "दिनांक:",
+                    ""
+                  )}`
                 : `Submitted: ${formatDateTime(language).replace("Date:", "")}`}
             </p>
             <button
               onClick={() => navigate("/dashboard")}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
             >
               {language === "en" ? "Go to Dashboard" : "डॅशबोर्डवर जा"}
             </button>
@@ -432,7 +453,7 @@ function InspectionChecklist({ language, toggleLanguage }) {
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
-        rtl={false} // Set to false for LTR (Marathi is LTR)
+        rtl={false}
         pauseOnFocusLoss
         draggable
         closeButton={true}
@@ -461,18 +482,29 @@ function InspectionChecklist({ language, toggleLanguage }) {
                 ? config[language].titleSecond
                 : config[language].titleThird}
             </h2>
-            <div className="text-left text-gray-500 mb-4 sm:mb-6 text-xs sm:text-sm">
+            <div className="text-left text-gray-500 mb-6 text-sm">
               <p>
-                <span className="font-bold">{config[language].branchLabel || "Branch"}:</span> {user.branch}
+                <span className="font-bold">
+                  {config[language].branchLabel || "Branch"}:
+                </span>{" "}
+                {user.branch}
               </p>
               <p>
-                <span className="font-bold">{config[language].ownerNameLabel || "Owner Name"}:</span> {user.name}
+                <span className="font-bold">
+                  {config[language].ownerNameLabel || "Owner Name"}:
+                </span>{" "}
+                {user.name}
               </p>
               <p>
-                <span className="font-bold">{config[language].mobileLabel || "Mobile No"}:</span> {user.mobile}
+                <span className="font-bold">
+                  {config[language].mobileLabel || "Mobile No"}:
+                </span>{" "}
+                {user.mobile}
               </p>
               <p>
-                <span className="font-bold">{config[language].dateLabel || "Date"}:</span>{" "}
+                <span className="font-bold">
+                  {config[language].dateLabel || "Date"}:
+                </span>{" "}
                 {formatDateTime(language)
                   .replace(language === "mr" ? "दिनांक:" : "Date:", "")
                   .trim()}

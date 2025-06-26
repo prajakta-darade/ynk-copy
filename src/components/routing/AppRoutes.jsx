@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ContactInfo from "../ContactInfo";
-import LoginForms from "../LoginFroms"; // Updated import
+import LoginForms from "../LoginFroms";
 import TermsandCondition from "../TermsandCondition/TermsandCondition";
 import ShopSetupChecklistForm from "../ShopSetupChecklistForm/ShopSetupChecklistForm";
 import OnlineSurveyForm from "../OnlineSurveyForm/OnlineSurveyForm";
@@ -12,11 +12,14 @@ import InspectionChecklist from "../InspectionChecklist/InspectionChecklist";
 import ProjectWorkFollowup from "../ProjectWorkFollowup/ProjectWorkFollowup";
 import Dashboard from "../dashboard/Dashboard";
 import Admin from "../Admin";
-import ForgotPassword from "../ForgotPassword"; // Updated import
+import ForgotPassword from "../ForgotPassword";
+
 const AppRoutes = ({ language, toggleLanguage }) => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/contact-info" />} />
+      {/* Default route changed to login */}
+      <Route path="/" element={<Navigate to="/login" />} />
+
       <Route
         path="/contact-info"
         element={<ContactInfo language={language} toggleLanguage={toggleLanguage} />}
@@ -39,7 +42,7 @@ const AppRoutes = ({ language, toggleLanguage }) => {
       />
       <Route
         path="/shop-setup-checklist"
-        element={<ShopSetupChecklistForm language={language} />}
+        element={<ShopSetupChecklistForm language={language} toggleLanguage={toggleLanguage} />}
       />
       <Route
         path="/online-survey"
@@ -70,6 +73,9 @@ const AppRoutes = ({ language, toggleLanguage }) => {
         element={<InspectionChecklist language={language} toggleLanguage={toggleLanguage} />}
       />
       <Route path="/admin" element={<Admin />} />
+
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 };

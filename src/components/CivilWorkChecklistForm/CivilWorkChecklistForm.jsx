@@ -1,11 +1,11 @@
-import { useState } from "react";
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSubmitFormMutation } from "../../store/formApi";
+import { useUser } from "../context/UserContext";
 import CivilWorkChecklistFormQuestion from "./CivilWorkChecklistFormQuestion";
 import logo from "../../assets/logo.png";
-import { ToastContainer, toast } from "react-toastify"; // Import react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const {
   equipmentConfig,
@@ -25,6 +25,7 @@ const {
 
 export default function CivilWorkChecklistForm() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     cctv_understood: null,
     internet_understood: null,
@@ -36,6 +37,7 @@ export default function CivilWorkChecklistForm() {
     electrician_wire_understood: null,
     pop_tiles_understood: null,
     gas_piping_understood: null,
+    agreement: false,
   });
   const [language, setLanguage] = useState("mr");
   const [step, setStep] = useState(1);
@@ -55,6 +57,17 @@ export default function CivilWorkChecklistForm() {
     setErrors((prev) => ({
       ...prev,
       [stepKey]: null,
+    }));
+  };
+
+  const handleTermsChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      agreement: e.target.checked,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      agreement: null,
     }));
   };
 
@@ -82,6 +95,12 @@ export default function CivilWorkChecklistForm() {
             : `Please answer the question "${q[`question_${language}`]}"!`;
       }
     });
+    if (!formData.agreement) {
+      newErrors.agreement =
+        language === "mr"
+          ? "कृपया अटी आणि शर्ती स्वीकारा!"
+          : "Please accept the terms and conditions!";
+    }
     return newErrors;
   };
 
@@ -100,11 +119,7 @@ export default function CivilWorkChecklistForm() {
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
           padding: "10px 15px",
           minHeight: "40px",
-          display: "flex",
-         
-          
         },
- 
       });
       return;
     }
@@ -135,20 +150,19 @@ export default function CivilWorkChecklistForm() {
           autoClose: 5000,
           style: {
             backgroundColor: "#ffffff",
-          color: "#d32f2f",
-          borderLeft: "4px solid #d32f2f",
-          borderRadius: "4px",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          padding: "10px 15px",
-          minHeight: "40px",
-          display: "flex",
+            color: "#d32f2f",
+            borderLeft: "4px solid #d32f2f",
+            borderRadius: "4px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            padding: "10px 15px",
+            minHeight: "40px",
           },
-        
         }
       );
-      const firstUnanswered = questions.find((q) => formData[q.key] === null);
+      const firstUnanswered = questions.find((q) => formData[q.key] === null) ||
+                             (formData.agreement === false && { key: "agreement" });
       if (firstUnanswered) {
-        setStep(questions.findIndex((q) => q.key === firstUnanswered.key) + 1);
+        setStep(questions.findIndex((q) => q.key === firstUnanswered.key) + 1 || 1);
       }
       return;
     }
@@ -158,33 +172,38 @@ export default function CivilWorkChecklistForm() {
     const formattedData = new FormData();
     formattedData.append("formId", "civil_work_checklist");
     formattedData.append("language", language);
-    // Hardcoded user data - replace with dynamic data later
-    formattedData.append("name", "Test User");
-    formattedData.append("mobile", "1234567890");
-    formattedData.append("branch", "Test Branch");
+    formattedData.append("name", user?.name );
+    formattedData.append("mobile", user?.mobile );
+    formattedData.append("branch", user?.branch );
+    formattedData.append("submitted_at", new Date().toISOString());
+    formattedData.append("agreement", formData.agreement);
 
-    questions.forEach((q) => {
-      const question = q[`question_${language}`];
-      const answer =
+    // Send formResponses as a single JSON string with the responses array
+    const responsesArray = questions.map((q, index) => ({
+      questionId: `${q[`question_${language}`]}_${index + 1}`.replace(/\s+/g, "_"),
+      questionText: q[`question_${language}`],
+      answer:
         formData[q.key] === true
-          ? language === "mr"
-            ? "होय"
-            : "Yes"
+          ? language === "mr" ? "होय" : "Yes"
           : formData[q.key] === false
-          ? language === "mr"
-            ? "नाही"
-            : "No"
-          : language === "mr"
-          ? "उत्तर दिले नाही"
-          : "Not answered";
-      formattedData.append(question, answer);
-    });
+          ? language === "mr" ? "नाही" : "No"
+          : language === "mr" ? "उत्तर दिले नाही" : "Not answered",
+      images: [],
+      videos: [],
+    }));
+    formattedData.append("responses", JSON.stringify(responsesArray)); // Changed to "responses" key
+    console.log("Serialized responses:", JSON.stringify(responsesArray));
+
+    // Log FormData for debugging
+    for (let pair of formattedData.entries()) {
+      console.log("FormData:", pair[0] + ': ' + pair[1]);
+    }
 
     try {
-      await submitForm(formattedData).unwrap();
+      const result = await submitForm(formattedData).unwrap();
       toast.success(
         language === "mr"
-          ? "फॉर्म यशस्वीरित्या सबमिट झाला!"
+          ? "फॉर्म यशस्वीरीत्या सबमिट झाला!"
           : "Form submitted successfully!",
         {
           position: "top-right",
@@ -198,11 +217,12 @@ export default function CivilWorkChecklistForm() {
             padding: "10px 15px",
             minHeight: "40px",
           },
-        
         }
       );
       navigate("/material-checklist");
+      return result;
     } catch (err) {
+      console.error("Submission Error:", err);
       toast.error(
         language === "mr"
           ? `फॉर्म सबमिट करण्यात त्रुटी: ${err?.data?.message || "Unknown error"}`
@@ -219,7 +239,6 @@ export default function CivilWorkChecklistForm() {
             padding: "10px 15px",
             minHeight: "40px",
           },
-        
         }
       );
     } finally {
@@ -290,6 +309,9 @@ export default function CivilWorkChecklistForm() {
           {language === "mr" ? "नाही" : "No"}
         </label>
       </div>
+      {errors[stepKey] && (
+        <p className="text-red-500 text-sm mt-2">{errors[stepKey]}</p>
+      )}
     </div>
   );
 
@@ -389,6 +411,23 @@ export default function CivilWorkChecklistForm() {
                   config.questionKey,
                   questions[config.step - 1][`question_${language}`]
                 )}
+                {step === stepConfig.length && (
+                  <div className="mt-6">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.agreement}
+                        onChange={handleTermsChange}
+                        className="w-4 h-4 text-blue-600"
+                        aria-label={language === "mr" ? "अटी आणि शर्ती" : "Terms and Conditions"}
+                      />
+                      {language === "mr" ? "अटी आणि शर्ती स्वीकारा" : "Accept Terms and Conditions"}
+                    </label>
+                    {errors.agreement && (
+                      <p className="text-red-500 text-sm mt-2">{errors.agreement}</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between mt-6">
                   <button
                     onClick={handleBack}
@@ -430,7 +469,7 @@ export default function CivilWorkChecklistForm() {
             )
         )}
       </div>
-      <ToastContainer /> {/* Add ToastContainer to render toasts */}
+      <ToastContainer />
     </div>
   );
 }

@@ -1,8 +1,8 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Lock, Globe, Key } from "lucide-react";
 import logo from "../assets/logo.png";
+import axios from "axios";
 
 const labels = {
   en: {
@@ -129,15 +129,16 @@ const ForgotPassword = ({ language = "en", toggleLanguage }) => {
         return;
       }
       try {
-        // Simulate sending OTP
-        // Replace with actual API: await sendOtpApi({ mobile });
-        setTimeout(() => {
-          setSuccess(labels[language].success.step1);
-          setStep(2);
-          setIsSubmitting(false);
-        }, 1000);
+        await axios.post(
+          "http://localhost:5000/api/auth/send-otp",
+          { mobile },
+          { withCredentials: true }
+        );
+        setSuccess(labels[language].success.step1);
+        setStep(2);
+        setIsSubmitting(false);
       } catch (err) {
-        setError(labels[language].error.generic);
+        setError(err.response?.data?.message || labels[language].error.generic);
         setIsSubmitting(false);
       }
     } else if (step === 2) {
@@ -146,15 +147,16 @@ const ForgotPassword = ({ language = "en", toggleLanguage }) => {
         return;
       }
       try {
-        // Simulate OTP verification
-        // Replace with actual API: await verifyOtpApi({ mobile, otp });
-        setTimeout(() => {
-          setSuccess(labels[language].success.step2);
-          setStep(3);
-          setIsSubmitting(false);
-        }, 1000);
+        await axios.post(
+          "http://localhost:5000/api/auth/verify-otp",
+          { mobile, otp },
+          { withCredentials: true }
+        );
+        setSuccess(labels[language].success.step2);
+        setStep(3);
+        setIsSubmitting(false);
       } catch (err) {
-        setError(labels[language].error.otp);
+        setError(err.response?.data?.message || labels[language].error.otp);
         setIsSubmitting(false);
       }
     } else if (step === 3) {
@@ -163,20 +165,22 @@ const ForgotPassword = ({ language = "en", toggleLanguage }) => {
         return;
       }
       try {
-        // Simulate password reset
-        // Replace with actual API: await resetPasswordApi({ mobile, newPassword });
-        setTimeout(() => {
-          setSuccess(labels[language].success.step3);
-          setIsSubmitting(false);
-          setTimeout(() => navigate("/login"), 2000); // Redirect to login
-        }, 1000);
+        await axios.post(
+          "http://localhost:5000/api/auth/reset-password",
+          { mobile, newPassword },
+          { withCredentials: true }
+        );
+        setSuccess(labels[language].success.step3);
+        setIsSubmitting(false);
+        setTimeout(() => navigate("/login"), 2000);
       } catch (err) {
-        setError(labels[language].error.generic);
+        setError(err.response?.data?.message || labels[language].error.generic);
         setIsSubmitting(false);
       }
     }
   };
 
+  // Rest of the component remains the same
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="relative w-full max-w-lg">
@@ -335,8 +339,6 @@ const ForgotPassword = ({ language = "en", toggleLanguage }) => {
               {labels[language].backToLogin}
             </span>
           </p>
-
-       
         </div>
       </div>
     </div>
