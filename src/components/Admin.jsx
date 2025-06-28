@@ -100,8 +100,10 @@ const labels = {
 };
 
 const Admin = ({ language = "en", toggleLanguage }) => {
-  const [fetchLanguage, setFetchLanguage] = useState(null); // New state for language filter
-  const { data: responses, isLoading: loading, isFetching, error: fetchError } = useGetResponsesQuery(fetchLanguage ? { language: fetchLanguage } : {});
+  const [fetchLanguage, setFetchLanguage] = useState(null);
+  const { data: responses = [], isLoading: loading, isFetching, error: fetchError } = useGetResponsesQuery(
+    fetchLanguage ? { language: fetchLanguage } : {}
+  );
   const [deleteResponse] = useDeleteResponseMutation();
   const [deleteUser] = useDeleteUserMutation();
   const [updateResponse] = useUpdateResponseMutation();
@@ -109,6 +111,7 @@ const Admin = ({ language = "en", toggleLanguage }) => {
   const [users, setUsers] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [expandedUsers, setExpandedUsers] = useState({});
+  const [expandedQuestions, setExpandedQuestions] = useState({});
   const [stats, setStats] = useState({ totalUsers: 0, totalSubmissions: 0 });
   const [selectedImage, setSelectedImage] = useState(null);
   const [editingResponse, setEditingResponse] = useState(null);
@@ -125,12 +128,14 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     const fetchSession = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/auth/session", { withCredentials: true });
-        console.log("Session Response:", response.data);
         if (response.data.isAuthenticated) {
-          setCurrentUser(response.data.user);
+          setCurrentUser(response.data.user || {});
+        } else {
+          setCurrentUser(null);
         }
       } catch (error) {
         console.error("Error fetching session:", error);
+        setCurrentUser(null);
       }
     };
     fetchSession();
@@ -139,14 +144,13 @@ const Admin = ({ language = "en", toggleLanguage }) => {
   // Process responses
   useEffect(() => {
     if (responses) {
-      console.log("Raw Responses:", JSON.stringify(responses, null, 2));
       const uniqueUsers = [];
       const userIds = new Set();
       let totalSubmissions = 0;
 
       responses.forEach((submission) => {
-        const user = submission.userId;
-        if (user && !userIds.has(user._id)) {
+        const user = submission.userId || {};
+        if (user._id && !userIds.has(user._id)) {
           userIds.add(user._id);
           uniqueUsers.push(user);
         }
@@ -161,15 +165,14 @@ const Admin = ({ language = "en", toggleLanguage }) => {
       setStats({
         totalUsers: filteredUsers.length,
         totalSubmissions: showMySubmissions && currentUser
-          ? responses.filter((submission) => submission.userId._id === currentUser.id).length
+          ? responses.filter((submission) => submission.userId?._id === currentUser.id).length
           : totalSubmissions,
       });
 
       const submissionsByUser = {};
       filteredUsers.forEach((user) => {
-        submissionsByUser[user._id] = responses.filter((submission) => submission.userId._id === user._id);
+        submissionsByUser[user._id] = responses.filter((submission) => submission.userId?._id === user._id) || [];
       });
-      console.log("Submissions by User:", JSON.stringify(submissionsByUser, null, 2));
       setSubmissions(submissionsByUser);
     }
   }, [responses, showMySubmissions, currentUser]);
@@ -178,8 +181,15 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     setExpandedUsers((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
+  const toggleQuestion = (submissionId, questionId) => {
+    setExpandedQuestions((prev) => ({
+      ...prev,
+      [`${submissionId}_${questionId}`]: !prev[`${submissionId}_${questionId}`],
+    }));
+  };
+
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString(language === "mr" ? "mr-IN" : "en-IN");
+    return dateString ? new Date(dateString).toLocaleString(language === "mr" ? "mr-IN" : "en-IN") : "N/A";
   };
 
   const getLanguageDisplayName = (lang) => {
@@ -188,26 +198,34 @@ const Admin = ({ language = "en", toggleLanguage }) => {
 
   const handleDeleteResponse = async (id) => {
     if (window.confirm(labels[language].confirmDelete)) {
-      await deleteResponse(id);
+      try {
+        await deleteResponse(id);
+      } catch (error) {
+        console.error("Error deleting response:", error);
+      }
     }
   };
 
   const handleDeleteUser = async (id) => {
     if (window.confirm(labels[language].confirmDeleteUser)) {
-      await deleteUser(id);
+      try {
+        await deleteUser(id);
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
     }
   };
 
   const handleEditResponse = (submission) => {
     setEditingResponse(submission._id);
     setEditFormData({
-      language: submission.language,
-      responses: submission.responses.map((resp) => ({ ...resp })),
+      language: submission.language || "en",
+      responses: submission.responses ? submission.responses.map((resp) => ({ ...resp })) : [],
     });
   };
 
   const handleSaveEdit = async (id) => {
-    const hasEmptyFields = editFormData.responses.some((resp) => !resp.questionText.trim() || !resp.answer.trim());
+    const hasEmptyFields = editFormData.responses.some((resp) => !resp.questionText?.trim() || !resp.answer?.trim());
     if (hasEmptyFields) {
       alert("Question and answer fields cannot be empty.");
       return;
@@ -231,8 +249,7 @@ const Admin = ({ language = "en", toggleLanguage }) => {
   };
 
   const handleInputChange = (responseIndex, field, value) => {
-    console.log("Updating:", { responseIndex, field, value });
-    const updatedResponses = [...editFormData.responses];
+    const updatedResponses = [...(editFormData.responses || [])];
     updatedResponses[responseIndex] = { ...updatedResponses[responseIndex], [field]: value };
     setEditFormData({ ...editFormData, responses: updatedResponses });
   };
@@ -248,21 +265,25 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     }
     setIsSaving(true);
     try {
-      const submission = submissions[Object.keys(submissions)[0]].find((sub) => sub._id === submissionId);
-      const updatedResponses = [
-        ...submission.responses,
-        {
-          questionId: newQuestion.replace(/\s+/g, "_"),
-          questionText: newQuestion,
-          answer: newAnswer,
-          images: [],
-          videos: [],
-        },
-      ];
-      await updateResponse({ id: submissionId, language: submission.language, responses: updatedResponses }).unwrap();
-      setNewQuestion("");
-      setNewAnswer("");
-      setAddingQuestion(null);
+      const submission = submissions[Object.keys(submissions)[0]]?.find((sub) => sub._id === submissionId);
+      if (submission) {
+        const updatedResponses = [
+          ...(submission.responses || []),
+          {
+            questionId: newQuestion.replace(/\s+/g, "_"),
+            questionText: newQuestion,
+            answer: newAnswer,
+            images: [],
+            videos: [],
+            isSubQuestion: false,
+            parentQuestionId: null,
+          },
+        ];
+        await updateResponse({ id: submissionId, language: submission.language || "en", responses: updatedResponses }).unwrap();
+        setNewQuestion("");
+        setNewAnswer("");
+        setAddingQuestion(null);
+      }
     } catch (error) {
       console.error("Error adding question:", error);
       alert("Failed to add question.");
@@ -299,10 +320,18 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     );
   }
 
+  if (fetchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center bg-red-100 p-8 rounded-2xl shadow-xl">
+          <p className="text-red-700 text-lg">{`${labels[language].error}: ${fetchError?.data?.message || labels[language].unknownError}`}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-8">
-      {/* Test Marathi Rendering */}
-    
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 flex flex-col md:flex-row justify-between items-center">
@@ -313,7 +342,7 @@ const Admin = ({ language = "en", toggleLanguage }) => {
           <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mt-4 md:mt-0">
             {currentUser && (
               <span className="text-sm md:text-base font-medium">
-                {labels[language].loggedInAs}: {currentUser.name} ({currentUser.mobile})
+                {labels[language].loggedInAs}: {currentUser.name || labels[language].notProvided} ({currentUser.mobile || labels[language].notProvided})
               </span>
             )}
             {toggleLanguage && (
@@ -357,13 +386,6 @@ const Admin = ({ language = "en", toggleLanguage }) => {
             </div>
           </div>
         </div>
-
-        {/* Error Display */}
-        {fetchError && (
-          <div className="p-4 bg-red-100 text-red-700 rounded-lg m-6">
-            {`${labels[language].error}: ${fetchError?.data?.message || labels[language].unknownError}`}
-          </div>
-        )}
 
         {/* Users List */}
         <div className="p-6">
@@ -423,13 +445,13 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                 <div className="flex flex-col md:flex-row md:space-x-6">
                                   <div className="mb-2 md:mb-0">
                                     <span className="text-gray-500 font-medium">{labels[language].formId}:</span>
-                                    <span className="ml-2">{submission.formId}</span>
+                                    <span className="ml-2">{submission.formId || "N/A"}</span>
                                   </div>
                                   <div className="mb-2 md:mb-0">
                                     <span className="text-gray-500 font-medium">{labels[language].language}:</span>
                                     {editingResponse === submission._id ? (
                                       <select
-                                        value={editFormData.language}
+                                        value={editFormData.language || "en"}
                                         onChange={(e) => handleLanguageChange(e.target.value)}
                                         className="ml-2 border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                       >
@@ -437,7 +459,7 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                         <option value="mr">{labels[language].languageOptions.mr}</option>
                                       </select>
                                     ) : (
-                                      <span className="ml-2">{getLanguageDisplayName(submission.language)}</span>
+                                      <span className="ml-2">{getLanguageDisplayName(submission.language) || "N/A"}</span>
                                     )}
                                   </div>
                                   <div>
@@ -533,70 +555,190 @@ const Admin = ({ language = "en", toggleLanguage }) => {
 
                               {/* Responses */}
                               <div className="space-y-4">
-                                {submission.responses.map((response, index) => (
-                                  <div key={index} className="border-t pt-4">
-                                    <div className="mb-3">
-                                      <span className="font-medium text-gray-700">{labels[language].question}:</span>
-                                      {editingResponse === submission._id ? (
-                                        <input
-                                          type="text"
-                                          value={editFormData.responses[index]?.questionText || ""}
-                                          onChange={(e) => handleInputChange(index, "questionText", e.target.value)}
-                                          className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                      ) : (
-                                        <span className="ml-2">{response.questionText}</span>
-                                      )}
-                                    </div>
-                                    <div className="mb-3">
-                                      <span className="font-medium text-gray-700">{labels[language].answer}:</span>
-                                      {editingResponse === submission._id ? (
-                                        <input
-                                          type="text"
-                                          value={editFormData.responses[index]?.answer || ""}
-                                          onChange={(e) => handleInputChange(index, "answer", e.target.value)}
-                                          className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                      ) : (
-                                        <span className="ml-2">{response.answer}</span>
-                                      )}
-                                    </div>
-                                    {response.images?.length > 0 && (
-                                      <div className="mb-3">
-                                        <span className="font-medium text-gray-700">{labels[language].images}:</span>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                          {response.images.map((image, imgIndex) => (
-                                            <img
-                                              key={imgIndex}
-                                              src={image}
-                                              alt={`${labels[language].submissionImage} ${imgIndex + 1}`}
-                                              className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
-                                              onClick={() => setSelectedImage(image)}
+                                {submission.responses
+                                  ?.filter((response) => !response.isSubQuestion)
+                                  .map((response, index) => (
+                                    <div key={index} className="border-t pt-4">
+                                      <div
+                                        className="cursor-pointer flex items-center justify-between"
+                                        onClick={() => toggleQuestion(submission._id, response.questionId)}
+                                      >
+                                        <div className="mb-3">
+                                          <span className="font-medium text-gray-700">{labels[language].question}:</span>
+                                          {editingResponse === submission._id ? (
+                                            <input
+                                              type="text"
+                                              value={editFormData.responses[index]?.questionText || ""}
+                                              onChange={(e) => handleInputChange(index, "questionText", e.target.value)}
+                                              className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
-                                          ))}
+                                          ) : (
+                                            <span className="ml-2">{response.questionText || "N/A"}</span>
+                                          )}
                                         </div>
+                                        <span
+                                          className={`transform transition-transform ${
+                                            expandedQuestions[`${submission._id}_${response.questionId}`] ? "rotate-180" : ""
+                                          }`}
+                                        >
+                                          ▼
+                                        </span>
                                       </div>
-                                    )}
-                                    {response.videos?.length > 0 && (
-                                      <div>
-                                        <span className="font-medium text-gray-700">{labels[language].videos}:</span>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                          {response.videos.map((video, vidIndex) => (
-                                            <video
-                                              key={vidIndex}
-                                              controls
-                                              className="w-48 h-32 rounded-lg"
-                                              preload="metadata"
-                                            >
-                                              <source src={video} type="video/mp4" />
-                                              {labels[language].videoNotSupported}
-                                            </video>
-                                          ))}
+                                      {expandedQuestions[`${submission._id}_${response.questionId}`] && (
+                                        <div className="ml-4">
+                                          <div className="mb-3">
+                                            <span className="font-medium text-gray-700">{labels[language].answer}:</span>
+                                            {editingResponse === submission._id ? (
+                                              <input
+                                                type="text"
+                                                value={editFormData.responses[index]?.answer || ""}
+                                                onChange={(e) => handleInputChange(index, "answer", e.target.value)}
+                                                className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              />
+                                            ) : (
+                                              <span className="ml-2">{response.answer || "N/A"}</span>
+                                            )}
+                                          </div>
+                                          {(response.images?.length > 0 || response.videos?.length > 0) && (
+                                            <div className="mt-2">
+                                              {response.images?.length > 0 && (
+                                                <div className="mb-3">
+                                                  <span className="font-medium text-gray-700">{labels[language].images}:</span>
+                                                  <div className="flex flex-wrap gap-2 mt-2">
+                                                    {response.images.map((image, imgIndex) => (
+                                                      <img
+                                                        key={imgIndex}
+                                                        src={image}
+                                                        alt={`${labels[language].submissionImage} ${imgIndex + 1}`}
+                                                        className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                                        onClick={() => setSelectedImage(image)}
+                                                      />
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {response.videos?.length > 0 && (
+                                                <div>
+                                                  <span className="font-medium text-gray-700">{labels[language].videos}:</span>
+                                                  <div className="flex flex-wrap gap-2 mt-2">
+                                                    {response.videos.map((video, vidIndex) => (
+                                                      <video
+                                                        key={vidIndex}
+                                                        controls
+                                                        className="w-48 h-32 rounded-lg"
+                                                        preload="metadata"
+                                                      >
+                                                        <source src={video} type="video/mp4" />
+                                                        {labels[language].videoNotSupported}
+                                                      </video>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                          {/* Sub-questions */}
+                                          {submission.responses
+                                            .filter(
+                                              (subResp) =>
+                                                subResp.isSubQuestion && subResp.parentQuestionId === response.questionId
+                                            )
+                                            .map((subResponse, subIndex) => (
+                                              <div key={subIndex} className="ml-6 border-l-2 border-blue-200 pl-4 mt-4">
+                                                <div className="mb-3">
+                                                  <span className="font-medium text-gray-700">{labels[language].question} (Subquestion):</span>
+                                                  {editingResponse === submission._id ? (
+                                                    <input
+                                                      type="text"
+                                                      value={
+                                                        editFormData.responses.find(
+                                                          (r) => r.questionId === subResponse.questionId
+                                                        )?.questionText || ""
+                                                      }
+                                                      onChange={(e) =>
+                                                        handleInputChange(
+                                                          submission.responses.findIndex(
+                                                            (r) => r.questionId === subResponse.questionId
+                                                          ),
+                                                          "questionText",
+                                                          e.target.value
+                                                        )
+                                                      }
+                                                      className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                  ) : (
+                                                    <span className="ml-2">{subResponse.questionText || "N/A"}</span>
+                                                  )}
+                                                </div>
+                                                <div className="mb-3">
+                                                  <span className="font-medium text-gray-700">{labels[language].answer}:</span>
+                                                  {editingResponse === submission._id ? (
+                                                    <input
+                                                      type="text"
+                                                      value={
+                                                        editFormData.responses.find(
+                                                          (r) => r.questionId === subResponse.questionId
+                                                        )?.answer || ""
+                                                      }
+                                                      onChange={(e) =>
+                                                        handleInputChange(
+                                                          submission.responses.findIndex(
+                                                            (r) => r.questionId === subResponse.questionId
+                                                          ),
+                                                          "answer",
+                                                          e.target.value
+                                                        )
+                                                      }
+                                                      className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                  ) : (
+                                                    <span className="ml-2">{subResponse.answer || "N/A"}</span>
+                                                  )}
+                                                </div>
+                                                {(subResponse.images?.length > 0 || subResponse.videos?.length > 0) && (
+                                                  <div className="mt-2">
+                                                    {subResponse.images?.length > 0 && (
+                                                      <div className="mb-3">
+                                                        <span className="font-medium text-gray-700">{labels[language].images}:</span>
+                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                          {subResponse.images.map((image, imgIndex) => (
+                                                            <img
+                                                              key={imgIndex}
+                                                              src={image}
+                                                              alt={`${labels[language].submissionImage} ${imgIndex + 1}`}
+                                                              className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                                              onClick={() => setSelectedImage(image)}
+                                                            />
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    {subResponse.videos?.length > 0 && (
+                                                      <div>
+                                                        <span className="font-medium text-gray-700">{labels[language].videos}:</span>
+                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                          {subResponse.videos.map((video, vidIndex) => (
+                                                            <video
+                                                              key={vidIndex}
+                                                              controls
+                                                              className="w-48 h-32 rounded-lg"
+                                                              preload="metadata"
+                                                            >
+                                                              <source src={video} type="video/mp4" />
+                                                              {labels[language].videoNotSupported}
+                                                            </video>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))}
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
+                                      )}
+                                    </div>
+                                  ))}
                               </div>
                             </div>
                           ))}
