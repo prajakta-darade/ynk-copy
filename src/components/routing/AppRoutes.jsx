@@ -14,70 +14,87 @@ import Dashboard from "../dashboard/Dashboard";
 import Admin from "../Admin";
 import ForgotPassword from "../ForgotPassword";
 
+import { useUser } from "../context/UserContext";
 const AppRoutes = ({ language, toggleLanguage }) => {
+  const { user } = useUser();
+
   return (
     <Routes>
-      {/* Default route changed to login */}
-      <Route path="/" element={<Navigate to="/login" />} />
+      {/* Default route */}
+      <Route path="/" element={<Navigate to={user.isAuthenticated ? "/dashboard" : "/login"} />} />
 
+      {/* Public routes (no authentication required) */}
       <Route
         path="/contact-info"
         element={<ContactInfo language={language} toggleLanguage={toggleLanguage} />}
       />
       <Route
         path="/login"
-        element={<LoginForms language={language} toggleLanguage={toggleLanguage} />}
+        element={!user.isAuthenticated ? <LoginForms language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/dashboard" />}
       />
       <Route
         path="/forgot-password"
-        element={<ForgotPassword language={language} toggleLanguage={toggleLanguage} />}
+        element={!user.isAuthenticated ? <ForgotPassword language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/dashboard" />}
       />
+
+      {/* Authenticated routes */}
       <Route
         path="/dashboard"
-        element={<Dashboard language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <Dashboard language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/terms-and-condition"
-        element={<TermsandCondition language={language} />}
+        element={user.isAuthenticated ? <TermsandCondition language={language} /> : <Navigate to="/login" />}
       />
       <Route
         path="/shop-setup-checklist"
-        element={<ShopSetupChecklistForm language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <ShopSetupChecklistForm language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/online-survey"
-        element={<OnlineSurveyForm language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <OnlineSurveyForm language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/civil-work-checklist"
-        element={<CivilWorkChecklistForm language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <CivilWorkChecklistForm language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/shop-measurements"
-        element={<ShopMeasurementsForm language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <ShopMeasurementsForm language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/service-process"
-        element={<InternalDepartmentWorking language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <InternalDepartmentWorking language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/project-work-followup"
-        element={<ProjectWorkFollowup language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <ProjectWorkFollowup language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/material-checklist"
-        element={<MaterialChecklist language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <MaterialChecklist language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
       <Route
         path="/inspection-checklist"
-        element={<InspectionChecklist language={language} toggleLanguage={toggleLanguage} />}
+        element={user.isAuthenticated ? <InspectionChecklist language={language} toggleLanguage={toggleLanguage} /> : <Navigate to="/login" />}
       />
-      <Route path="/admin" element={<Admin />} />
+
+      {/* Admin-only route */}
+      <Route
+        path="/admin"
+        element={
+          user.isAuthenticated && user.role === "admin" ? (
+            <Admin language={language} toggleLanguage={toggleLanguage} />
+          ) : (
+            <Navigate to={user.isAuthenticated ? "/dashboard" : "/login"} />
+          )
+        }
+      />
 
       {/* Catch-all route */}
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to={user.isAuthenticated ? "/dashboard" : "/login"} />} />
     </Routes>
   );
-};
+}
 
 export default AppRoutes;

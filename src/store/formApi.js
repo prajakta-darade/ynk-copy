@@ -1,7 +1,7 @@
+// store/formApi.js
 import { createApi } from '@reduxjs/toolkit/query/react';
 import axios from 'axios';
 
-// Custom axiosBaseQuery to handle UTF-8 and credentials
 const axiosBaseQuery = ({ baseUrl } = { baseUrl: '' }) => async ({ url, method, data, params }) => {
   console.log(`API Request: ${method} ${baseUrl}${url}`, { params, data: data instanceof FormData ? Object.fromEntries(data) : data });
   try {
@@ -50,14 +50,14 @@ export const formApi = createApi({
       invalidatesTags: ['Responses'],
     }),
     getResponses: builder.query({
-      query: ({ formId, language }) => {
+      query: ({ formId, language, userId }) => {
         const validLanguages = ['en', 'mr'];
         if (language && !validLanguages.includes(language)) {
           throw new Error('Invalid language. Must be one of: en, mr.');
         }
         return {
           url: '/responses',
-          params: { formId, language },
+          params: { formId, language, userId },
         };
       },
       providesTags: ['Responses'],

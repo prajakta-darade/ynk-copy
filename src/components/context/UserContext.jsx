@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../../api/Api"; // Use custom api instance
 
@@ -11,6 +9,7 @@ export const UserProvider = ({ children }) => {
     mobile: "",
     name: "",
     branch: "",
+    role: "", // Add role to state
     isAuthenticated: false,
   }); // Initial state with defaults
 
@@ -27,6 +26,7 @@ export const UserProvider = ({ children }) => {
             mobile: response.data.user.mobile,
             name: response.data.user.name,
             branch: response.data.user.branch,
+            role: response.data.user.role || "", // Ensure role is included
             isAuthenticated: true,
           });
         } else {
@@ -35,6 +35,7 @@ export const UserProvider = ({ children }) => {
             mobile: "",
             name: "",
             branch: "",
+            role: "",
             isAuthenticated: false,
           });
         }
@@ -50,6 +51,7 @@ export const UserProvider = ({ children }) => {
           mobile: "",
           name: "",
           branch: "",
+          role: "",
           isAuthenticated: false,
         });
       }
@@ -71,6 +73,7 @@ export const UserProvider = ({ children }) => {
           mobile: response.data.user.mobile,
           name: response.data.user.name,
           branch: response.data.user.branch,
+          role: response.data.user.role || "", // Include role from response
           isAuthenticated: true,
         });
       }
@@ -95,6 +98,7 @@ export const UserProvider = ({ children }) => {
           mobile: "",
           name: "",
           branch: "",
+          role: "",
           isAuthenticated: false,
         });
       } else {

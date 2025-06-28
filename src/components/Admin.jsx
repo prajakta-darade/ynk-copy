@@ -1,107 +1,125 @@
 import React, { useState, useEffect } from "react";
 import logo from "../assets/logo.png";
-import {
-  useGetResponsesQuery,
-  useDeleteResponseMutation,
-  useDeleteUserMutation,
-  useUpdateResponseMutation,
-} from "../store/formApi";
-import axios from "axios";
+import { useGetResponsesQuery, useDeleteResponseMutation, useDeleteUserMutation, useUpdateResponseMutation } from "../store/formApi";
+import { useUser } from "../components/context/UserContext";
+import { useNavigate } from "react-router-dom";
 
 const labels = {
   en: {
-    title: "YNK Admin",
-    userList: "User List",
+    title: "Admin Dashboard",
+    loading: "Loading...",
+    error: "Error",
+    unknownError: "An unknown error occurred",
+    loggedInAs: "Logged in as",
+    notProvided: "Not Provided",
     name: "Name",
     mobile: "Mobile",
+    password: "Password",
     branch: "Branch",
+    roleLabel: "Role",
+    rolePlaceholder: "Select role",
+    admin: "Admin",
+    user: "User",
+    layer1: "Layer 1",
+    layer2: "Layer 2",
+    layer3: "Layer 3",
+    layer4: "Layer 4",
+    layer5: "Layer 5",
+    layer6: "Layer 6",
+    layer7: "Layer 7",
+    add: "Add",
+    delete: "Delete",
+    edit: "Edit",
+    addUser: "Add New User",
+    userList: "User List",
+    totalUsers: "Total Users",
+    totalSubmissions: "Total Submissions",
     submissions: "Submissions",
+    noUsers: "No users found.",
+    noSubmissions: "No submissions found.",
+    showMySubmissions: "Show My Submissions",
+    showAllSubmissions: "Show All Submissions",
+    showMarathiOnly: "Show Marathi Only",
+    showAllLanguages: "Show All Languages",
     formId: "Form ID",
     language: "Language",
     submittedAt: "Submitted At",
-    responses: "Responses",
     question: "Question",
     answer: "Answer",
     images: "Images",
     videos: "Videos",
-    notProvided: "Not provided",
-    noUsers: "No users found.",
-    noSubmissions: "No submissions found for this user.",
-    loading: "Loading...",
-    error: "Error",
-    unknownError: "Unknown error",
     submissionImage: "Submission Image",
     videoNotSupported: "Your browser does not support the video tag.",
-    totalUsers: "Total Users",
-    totalSubmissions: "Total Submissions",
-    viewImage: "View Image",
-    playVideo: "Play Video",
-    delete: "Delete",
-    edit: "Edit",
-    save: "Save",
+    addQuestion: "Add Question",
+    newQuestion: "Enter new question",
+    newAnswer: "Enter new answer",
     cancel: "Cancel",
-    confirmDelete: "Are you sure you want to delete this?",
-    confirmDeleteUser: "Are you sure you want to delete this user and all their submissions?",
-    loggedInAs: "Logged in as",
-    showMySubmissions: "Show My Submissions Only",
-    showAllSubmissions: "Show All Submissions",
-    addQuestion: "Add New Question",
-    newQuestion: "New Question",
-    newAnswer: "New Answer",
-    add: "Add",
-    languageOptions: { en: "English", mr: "Marathi" },
-    showMarathiOnly: "Show Marathi Only",
-    showAllLanguages: "Show All Languages",
+    loggedInUsers: "Logged-In Users",
+    noLoggedInUsers: "No users currently logged in.",
+    logout: "Logout",
+    back: "Back",
   },
   mr: {
-    title: "YNK ॲडमिन",
-    userList: "वापरकर्ता यादी",
+    title: "प्रशासक डॅशबोर्ड",
+    loading: "लोड होत आहे...",
+    error: "त्रुटी",
+    unknownError: "अज्ञात त्रुटी आली",
+    loggedInAs: "लॉग इन केलेले",
+    notProvided: "पुरवले नाही",
     name: "नाव",
     mobile: "मोबाइल",
+    password: "पासवर्ड",
     branch: "शाखा",
+    roleLabel: "भूमिका",
+    rolePlaceholder: "भूमिका निवडा",
+    admin: "प्रशासक",
+    user: "वापरकर्ता",
+    layer1: "स्तर 1",
+    layer2: "स्तर 2",
+    layer3: "स्तर 3",
+    layer4: "स्तर 4",
+    layer5: "स्तर 5",
+    layer6: "स्तर 6",
+    layer7: "स्तर 7",
+    add: "जोडा",
+    delete: "हटवा",
+    edit: "संपादित करा",
+    addUser: "नवीन वापरकर्ता जोडा",
+    userList: "वापरकर्ता यादी",
+    totalUsers: "एकूण वापरकर्ते",
+    totalSubmissions: "एकूण सबमिशन्स",
     submissions: "सबमिशन्स",
+    noUsers: "वापरकर्ते सापडले नाहीत.",
+    noSubmissions: "सबमिशन्स सापडले नाहीत.",
+    showMySubmissions: "माझ्या सबमिशन्स दाखवा",
+    showAllSubmissions: "सर्व सबमिशन्स दाखवा",
+    showMarathiOnly: "फक्त मराठी दाखवा",
+    showAllLanguages: "सर्व भाषा दाखवा",
     formId: "फॉर्म आयडी",
     language: "भाषा",
-    submittedAt: "सबमिट केलेले",
-    responses: "प्रतिसाद",
+    submittedAt: "सबमिट केलेले वेळ",
     question: "प्रश्न",
     answer: "उत्तर",
     images: "प्रतिमा",
-    videos: "व्हिडीओ",
-    notProvided: "प्रदान केलेले नाही",
-    noUsers: "कोणतेही वापरकर्ते सापडले नाहीत.",
-    noSubmissions: "या वापरकर्त्यासाठी कोणतेही सबमिशन्स सापडले नाहीत.",
-    loading: "लोड होत आहे...",
-    error: "त्रुटी",
-    unknownError: "अज्ञात त्रुटी",
+    videos: "व्हिडिओ",
     submissionImage: "सबमिशन प्रतिमा",
-    videoNotSupported: "तुमचा ब्राउझर व्हिडीओ टॅगला सपोर्ट करत नाही.",
-    totalUsers: "एकूण वापरकर्ते",
-    totalSubmissions: "एकूण सबमिशन्स",
-    viewImage: "प्रतिमा पहा",
-    playVideo: "व्हिडीओ प्ले करा",
-    delete: "हटवा",
-    edit: "संपादन करा",
-    save: "जतन करा",
+    videoNotSupported: "आपला ब्राउझर व्हिडिओ टॅग समर्थित करत नाही.",
+    addQuestion: "प्रश्न जोडा",
+    newQuestion: "नवीन प्रश्न प्रविष्ट करा",
+    newAnswer: "नवीन उत्तर प्रविष्ट करा",
     cancel: "रद्द करा",
-    confirmDelete: "तुम्हाला हे हटवायचे आहे का?",
-    confirmDeleteUser: "तुम्हाला हा वापरकर्ता आणि त्यांचे सर्व सबमिशन्स हटवायचे आहेत का?",
-    loggedInAs: "लॉग इन केलेले",
-    showMySubmissions: "फक्त माझे सबमिशन्स दाखवा",
-    showAllSubmissions: "सर्व सबमिशन्स दाखवा",
-    addQuestion: "नवीन प्रश्न जोडा",
-    newQuestion: "नवीन प्रश्न",
-    newAnswer: "नवीन उत्तर",
-    add: "जोडा",
-    languageOptions: { en: "इंग्लिश", mr: "मराठी" },
-    showMarathiOnly: "फक्त मराठी दाखवा",
-    showAllLanguages: "सर्व भाषा दाखवा",
+    loggedInUsers: "लॉग इन केलेले वापरकर्ते",
+    noLoggedInUsers: "सध्या कोणतेही वापरकर्ते लॉग इन केलेले नाहीत.",
+    logout: "लॉगआउट",
+    back: "मागे",
   },
 };
 
 const Admin = ({ language = "en", toggleLanguage }) => {
+  const { user: currentUser, logout } = useUser(); // Added logout from useUser
+  const navigate = useNavigate();
   const [fetchLanguage, setFetchLanguage] = useState(null);
-  const { data: responses = [], isLoading: loading, isFetching, error: fetchError } = useGetResponsesQuery(
+  const { data: responses = [], isLoading, isFetching, error: fetchError } = useGetResponsesQuery(
     fetchLanguage ? { language: fetchLanguage } : {}
   );
   const [deleteResponse] = useDeleteResponseMutation();
@@ -117,33 +135,25 @@ const Admin = ({ language = "en", toggleLanguage }) => {
   const [editingResponse, setEditingResponse] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const [showMySubmissions, setShowMySubmissions] = useState(false);
   const [addingQuestion, setAddingQuestion] = useState(null);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [addUserForm, setAddUserForm] = useState({ name: "", mobile: "", password: "", branch: "", role: "user" });
+  const [addUserError, setAddUserError] = useState("");
 
-  // Fetch current user session
+  // Use UserContext's user instead of separate axios call
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/auth/session", { withCredentials: true });
-        if (response.data.isAuthenticated) {
-          setCurrentUser(response.data.user || {});
-        } else {
-          setCurrentUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching session:", error);
-        setCurrentUser(null);
-      }
-    };
-    fetchSession();
-  }, []);
+    if (!currentUser) {
+      setUsers([]);
+      setSubmissions({});
+      setStats({ totalUsers: 0, totalSubmissions: 0 });
+    }
+  }, [currentUser]);
 
-  // Process responses
+  // Process responses into users and submissions
   useEffect(() => {
-    if (responses) {
+    if (responses && currentUser) {
       const uniqueUsers = [];
       const userIds = new Set();
       let totalSubmissions = 0;
@@ -152,19 +162,19 @@ const Admin = ({ language = "en", toggleLanguage }) => {
         const user = submission.userId || {};
         if (user._id && !userIds.has(user._id)) {
           userIds.add(user._id);
-          uniqueUsers.push(user);
+          uniqueUsers.push({ ...user, _id: user._id }); // Ensure _id is included
         }
         totalSubmissions++;
       });
 
-      const filteredUsers = showMySubmissions && currentUser
+      const filteredUsers = showMySubmissions
         ? uniqueUsers.filter((user) => user._id === currentUser.id)
         : uniqueUsers;
 
       setUsers(filteredUsers);
       setStats({
         totalUsers: filteredUsers.length,
-        totalSubmissions: showMySubmissions && currentUser
+        totalSubmissions: showMySubmissions
           ? responses.filter((submission) => submission.userId?._id === currentUser.id).length
           : totalSubmissions,
       });
@@ -177,10 +187,33 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     }
   }, [responses, showMySubmissions, currentUser]);
 
-  const toggleUser = (userId) => {
-    setExpandedUsers((prev) => ({ ...prev, [userId]: !prev[userId] }));
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return labels[language].notProvided;
+    const date = new Date(dateString);
+    return date.toLocaleString(language === "mr" ? "mr-IN" : "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
+  // Helper function to get language display name
+  const getLanguageDisplayName = (lang) => {
+    return lang === "mr" ? "Marathi" : lang === "en" ? "English" : lang || "N/A";
+  };
+
+  // Toggle user expansion
+  const toggleUser = (userId) => {
+    setExpandedUsers((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
+  };
+
+  // Toggle question expansion
   const toggleQuestion = (submissionId, questionId) => {
     setExpandedQuestions((prev) => ({
       ...prev,
@@ -188,108 +221,132 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     }));
   };
 
-  const formatDate = (dateString) => {
-    return dateString ? new Date(dateString).toLocaleString(language === "mr" ? "mr-IN" : "en-IN") : "N/A";
-  };
-
-  const getLanguageDisplayName = (lang) => {
-    return labels[language].languageOptions[lang] || lang;
-  };
-
-  const handleDeleteResponse = async (id) => {
-    if (window.confirm(labels[language].confirmDelete)) {
+  // Handle delete user
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm(labels[language].delete + " " + labels[language].user + "?")) {
       try {
-        await deleteResponse(id);
-      } catch (error) {
-        console.error("Error deleting response:", error);
-      }
-    }
-  };
-
-  const handleDeleteUser = async (id) => {
-    if (window.confirm(labels[language].confirmDeleteUser)) {
-      try {
-        await deleteUser(id);
+        await deleteUser(userId).unwrap();
+        setUsers((prev) => prev.filter((user) => user._id !== userId));
+        setSubmissions((prev) => {
+          const newSubmissions = { ...prev };
+          delete newSubmissions[userId];
+          return newSubmissions;
+        });
       } catch (error) {
         console.error("Error deleting user:", error);
+        alert(labels[language].error + ": " + (error?.data?.message || labels[language].unknownError));
       }
     }
   };
 
+  // Handle delete response
+  const handleDeleteResponse = async (responseId) => {
+    if (window.confirm(labels[language].delete + " " + labels[language].submission + "?")) {
+      try {
+        await deleteResponse(responseId).unwrap();
+        setSubmissions((prev) => {
+          const newSubmissions = {};
+          Object.keys(prev).forEach((userId) => {
+            newSubmissions[userId] = prev[userId].filter((sub) => sub._id !== responseId);
+          });
+          return newSubmissions;
+        });
+      } catch (error) {
+        console.error("Error deleting response:", error);
+        alert(labels[language].error + ": " + (error?.data?.message || labels[language].unknownError));
+      }
+    }
+  };
+
+  // Handle edit response
   const handleEditResponse = (submission) => {
     setEditingResponse(submission._id);
     setEditFormData({
-      language: submission.language || "en",
-      responses: submission.responses ? submission.responses.map((resp) => ({ ...resp })) : [],
+      ...submission.responses.reduce((acc, resp) => ({ ...acc, [resp.questionId]: resp.answer }), {}),
     });
   };
 
-  const handleSaveEdit = async (id) => {
-    const hasEmptyFields = editFormData.responses.some((resp) => !resp.questionText?.trim() || !resp.answer?.trim());
-    if (hasEmptyFields) {
-      alert("Question and answer fields cannot be empty.");
-      return;
-    }
+  // Handle save edited response
+  const handleSaveEdit = async () => {
+    if (!editingResponse) return;
     setIsSaving(true);
     try {
-      await updateResponse({ id, ...editFormData }).unwrap();
+      await updateResponse({
+        id: editingResponse,
+        responses: Object.entries(editFormData).map(([questionId, answer]) => ({ questionId, answer })),
+      }).unwrap();
       setEditingResponse(null);
       setEditFormData({});
     } catch (error) {
-      console.error("Error saving edit:", error);
-      alert("Failed to save changes.");
+      console.error("Error updating response:", error);
+      alert(labels[language].error + ": " + (error?.data?.message || labels[language].unknownError));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingResponse(null);
-    setEditFormData({});
-  };
-
-  const handleInputChange = (responseIndex, field, value) => {
-    const updatedResponses = [...(editFormData.responses || [])];
-    updatedResponses[responseIndex] = { ...updatedResponses[responseIndex], [field]: value };
-    setEditFormData({ ...editFormData, responses: updatedResponses });
-  };
-
-  const handleLanguageChange = (value) => {
-    setEditFormData({ ...editFormData, language: value });
-  };
-
+  // Handle add question
   const handleAddQuestion = async (submissionId) => {
-    if (!newQuestion.trim() || !newAnswer.trim()) {
-      alert("New question and answer cannot be empty.");
+    if (!newQuestion || !newAnswer) {
+      alert(labels[language].error + ": " + labels[language].newQuestion + " and " + labels[language].newAnswer + " are required.");
       return;
     }
     setIsSaving(true);
     try {
-      const submission = submissions[Object.keys(submissions)[0]]?.find((sub) => sub._id === submissionId);
-      if (submission) {
-        const updatedResponses = [
-          ...(submission.responses || []),
-          {
-            questionId: newQuestion.replace(/\s+/g, "_"),
-            questionText: newQuestion,
-            answer: newAnswer,
-            images: [],
-            videos: [],
-            isSubQuestion: false,
-            parentQuestionId: null,
-          },
-        ];
-        await updateResponse({ id: submissionId, language: submission.language || "en", responses: updatedResponses }).unwrap();
-        setNewQuestion("");
-        setNewAnswer("");
-        setAddingQuestion(null);
-      }
+      await updateResponse({
+        id: submissionId,
+        responses: [
+          ...responses.find((sub) => sub._id === submissionId).responses,
+          { questionText: newQuestion, answer: newAnswer, isSubQuestion: false },
+        ],
+      }).unwrap();
+      setAddingQuestion(null);
+      setNewQuestion("");
+      setNewAnswer("");
     } catch (error) {
       console.error("Error adding question:", error);
-      alert("Failed to add question.");
+      alert(labels[language].error + ": " + (error?.data?.message || labels[language].unknownError));
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handle add user
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/admin/add-user", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addUserForm),
+      });
+      const data = await response.json();
+      console.log("Add User Response:", data);
+      if (!response.ok) throw new Error(data.message || "Failed to add user");
+      setAddUserForm({ name: "", mobile: "", password: "", branch: "", role: "user" });
+      setAddUserError("");
+      alert(labels[language].addUser + " successful!");
+    } catch (error) {
+      console.error("Error adding user:", error);
+      setAddUserError(error.message || "Failed to add user.");
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login"); // Redirect to login page after logout
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert(labels[language].error + ": " + (error?.message || labels[language].unknownError));
+    }
+  };
+
+  // Handle back navigation
+  const handleBack = () => {
+    navigate(-1); // Navigate back to the previous page (e.g., /dashboard)
   };
 
   const ImageModal = ({ src, alt, onClose }) => {
@@ -297,19 +354,14 @@ const Admin = ({ language = "en", toggleLanguage }) => {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="relative max-w-4xl max-h-full">
-          <button
-            onClick={onClose}
-            className="absolute top-2 right-2 text-white text-xl hover:text-gray-300 bg-gray-800 rounded-full p-1"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="absolute top-2 right-2 text-white text-xl hover:text-gray-300 bg-gray-800 rounded-full p-1">✕</button>
           <img src={src} alt={alt} className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       </div>
     );
   };
 
-  if (loading || isFetching) {
+  if (isLoading || isFetching) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
@@ -326,6 +378,14 @@ const Admin = ({ language = "en", toggleLanguage }) => {
         <div className="text-center bg-red-100 p-8 rounded-2xl shadow-xl">
           <p className="text-red-700 text-lg">{`${labels[language].error}: ${fetchError?.data?.message || labels[language].unknownError}`}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!currentUser || currentUser.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center text-red-600">Access Denied: Only admins can view this page.</div>
       </div>
     );
   }
@@ -370,12 +430,98 @@ const Admin = ({ language = "en", toggleLanguage }) => {
             >
               {fetchLanguage === "mr" ? labels[language].showAllLanguages : labels[language].showMarathiOnly}
             </button>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition font-medium"
+              type="button"
+            >
+              {labels[language].logout}
+            </button>
+            <button
+              onClick={handleBack}
+              className="bg-gray-600 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition font-medium"
+              type="button"
+            >
+              {labels[language].back}
+            </button>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Add User Form */}
         <div className="p-6 bg-gray-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800">{labels[language].addUser}</h2>
+          <form onSubmit={handleAddUser} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">{labels[language].name}</label>
+                <input
+                  type="text"
+                  value={addUserForm.name}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={labels[language].name}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">{labels[language].mobile}</label>
+                <input
+                  type="tel"
+                  value={addUserForm.mobile}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={labels[language].mobile}
+                  maxLength="10"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">{labels[language].password}</label>
+                <input
+                  type="password"
+                  value={addUserForm.password}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={labels[language].password}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">{labels[language].branch}</label>
+                <input
+                  type="text"
+                  value={addUserForm.branch}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, branch: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={labels[language].branch}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700">{labels[language].roleLabel}</label>
+                <select
+                  value={addUserForm.role}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="admin">{labels[language].admin}</option>
+                  <option value="user">{labels[language].user}</option>
+                  <option value="layer1">{labels[language].layer1}</option>
+                  <option value="layer2">{labels[language].layer2}</option>
+                  <option value="layer3">{labels[language].layer3}</option>
+                  <option value="layer4">{labels[language].layer4}</option>
+                  <option value="layer5">{labels[language].layer5}</option>
+                  <option value="layer6">{labels[language].layer6}</option>
+                  <option value="layer7">{labels[language].layer7}</option>
+                </select>
+              </div>
+            </div>
+            {addUserError && <p className="text-sm text-red-600">{addUserError}</p>}
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition">
+              {labels[language].add}
+            </button>
+          </form>
+        </div>
+
+        {/* Stats and Users List */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="bg-white p-6 rounded-xl shadow-md">
               <h3 className="text-gray-600 font-semibold">{labels[language].totalUsers}</h3>
               <p className="text-3xl font-bold text-blue-600">{stats.totalUsers}</p>
@@ -385,33 +531,32 @@ const Admin = ({ language = "en", toggleLanguage }) => {
               <p className="text-3xl font-bold text-blue-600">{stats.totalSubmissions}</p>
             </div>
           </div>
-        </div>
-
-        {/* Users List */}
-        <div className="p-6">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">{labels[language].userList}</h2>
           {users.length > 0 ? (
             <div className="space-y-6">
               {users.map((user) => (
                 <div key={user._id} className="border rounded-xl bg-white shadow-md">
-                  {/* User Header */}
                   <div
                     className="p-6 flex flex-col md:flex-row justify-between items-center cursor-pointer hover:bg-gray-50 transition"
                     onClick={() => toggleUser(user._id)}
                   >
                     <div className="flex flex-col md:flex-row md:space-x-6">
-                      <div className="mb-2 md:mb-0">
+                      <span>
                         <span className="text-gray-500 font-medium">{labels[language].name}:</span>
-                        <span className="ml-2 font-semibold">{user?.name || labels[language].notProvided}</span>
-                      </div>
-                      <div className="mb-2 md:mb-0">
+                        <span className="ml-2 font-semibold">{user.name || labels[language].notProvided}</span>
+                      </span>
+                      <span>
                         <span className="text-gray-500 font-medium">{labels[language].mobile}:</span>
-                        <span className="ml-2 font-semibold">{user?.mobile || labels[language].notProvided}</span>
-                      </div>
-                      <div>
+                        <span className="ml-2 font-semibold">{user.mobile || labels[language].notProvided}</span>
+                      </span>
+                      <span>
                         <span className="text-gray-500 font-medium">{labels[language].branch}:</span>
-                        <span className="ml-2 font-semibold">{user?.branch || labels[language].notProvided}</span>
-                      </div>
+                        <span className="ml-2 font-semibold">{user.branch || labels[language].notProvided}</span>
+                      </span>
+                      <span>
+                        <span className="text-gray-500 font-medium">{labels[language].roleLabel}:</span>
+                        <span className="ml-2 font-semibold">{labels[language][user.role] || labels[language].notProvided}</span>
+                      </span>
                     </div>
                     <div className="flex items-center space-x-4 mt-4 md:mt-0">
                       <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
@@ -426,13 +571,9 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                       >
                         {labels[language].delete}
                       </button>
-                      <span className={`transform transition-transform ${expandedUsers[user._id] ? "rotate-180" : ""}`}>
-                        ▼
-                      </span>
+                      <span className={`transform transition-transform ${expandedUsers[user._id] ? "rotate-180" : ""}`}>▼</span>
                     </div>
                   </div>
-
-                  {/* Expanded Submissions */}
                   {expandedUsers[user._id] && (
                     <div className="p-6 bg-gray-50">
                       <h3 className="text-xl font-medium mb-4 text-gray-800">{labels[language].submissions}</h3>
@@ -440,77 +581,42 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                         <div className="space-y-6">
                           {submissions[user._id].map((submission) => (
                             <div key={submission._id} className="p-6 bg-white rounded-xl border shadow-sm">
-                              {/* Submission Meta */}
                               <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                                 <div className="flex flex-col md:flex-row md:space-x-6">
-                                  <div className="mb-2 md:mb-0">
+                                  <span>
                                     <span className="text-gray-500 font-medium">{labels[language].formId}:</span>
                                     <span className="ml-2">{submission.formId || "N/A"}</span>
-                                  </div>
-                                  <div className="mb-2 md:mb-0">
+                                  </span>
+                                  <span>
                                     <span className="text-gray-500 font-medium">{labels[language].language}:</span>
-                                    {editingResponse === submission._id ? (
-                                      <select
-                                        value={editFormData.language || "en"}
-                                        onChange={(e) => handleLanguageChange(e.target.value)}
-                                        className="ml-2 border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      >
-                                        <option value="en">{labels[language].languageOptions.en}</option>
-                                        <option value="mr">{labels[language].languageOptions.mr}</option>
-                                      </select>
-                                    ) : (
-                                      <span className="ml-2">{getLanguageDisplayName(submission.language) || "N/A"}</span>
-                                    )}
-                                  </div>
-                                  <div>
+                                    <span className="ml-2">{getLanguageDisplayName(submission.language) || "N/A"}</span>
+                                  </span>
+                                  <span>
                                     <span className="text-gray-500 font-medium">{labels[language].submittedAt}:</span>
                                     <span className="ml-2">{formatDate(submission.submittedAt)}</span>
-                                  </div>
+                                  </span>
                                 </div>
                                 <div className="flex space-x-3 mt-4 md:mt-0">
-                                  {editingResponse === submission._id ? (
-                                    <>
-                                      <button
-                                        onClick={() => handleSaveEdit(submission._id)}
-                                        className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition disabled:opacity-50"
-                                        disabled={isSaving}
-                                      >
-                                        {isSaving ? "Saving..." : labels[language].save}
-                                      </button>
-                                      <button
-                                        onClick={handleCancelEdit}
-                                        className="bg-gray-600 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition disabled:opacity-50"
-                                        disabled={isSaving}
-                                      >
-                                        {labels[language].cancel}
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button
-                                        onClick={() => handleEditResponse(submission)}
-                                        className="bg-yellow-600 text-white px-4 py-2 rounded-full hover:bg-yellow-700 transition"
-                                      >
-                                        {labels[language].edit}
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteResponse(submission._id)}
-                                        className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition"
-                                      >
-                                        {labels[language].delete}
-                                      </button>
-                                      <button
-                                        onClick={() => setAddingQuestion(submission._id)}
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
-                                      >
-                                        {labels[language].addQuestion}
-                                      </button>
-                                    </>
-                                  )}
+                                  <button
+                                    onClick={() => handleEditResponse(submission)}
+                                    className="bg-yellow-600 text-white px-4 py-2 rounded-full hover:bg-yellow-700 transition"
+                                  >
+                                    {labels[language].edit}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteResponse(submission._id)}
+                                    className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition"
+                                  >
+                                    {labels[language].delete}
+                                  </button>
+                                  <button
+                                    onClick={() => setAddingQuestion(submission._id)}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
+                                  >
+                                    {labels[language].addQuestion}
+                                  </button>
                                 </div>
                               </div>
-
-                              {/* Add New Question Form */}
                               {addingQuestion === submission._id && (
                                 <div className="p-4 bg-gray-100 rounded-lg mb-4">
                                   <h4 className="text-lg font-medium mb-3 text-gray-800">{labels[language].addQuestion}</h4>
@@ -552,8 +658,45 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                   </div>
                                 </div>
                               )}
-
-                              {/* Responses */}
+                              {editingResponse === submission._id && (
+                                <div className="p-4 bg-gray-100 rounded-lg mb-4">
+                                  <h4 className="text-lg font-medium mb-3 text-gray-800">{labels[language].edit}</h4>
+                                  {submission.responses
+                                    .filter((resp) => !resp.isSubQuestion)
+                                    .map((resp) => (
+                                      <div key={resp.questionId} className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700">{resp.questionText}</label>
+                                        <input
+                                          type="text"
+                                          value={editFormData[resp.questionId] || ""}
+                                          onChange={(e) =>
+                                            setEditFormData({ ...editFormData, [resp.questionId]: e.target.value })
+                                          }
+                                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                    ))}
+                                  <div className="flex space-x-3">
+                                    <button
+                                      onClick={handleSaveEdit}
+                                      className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition disabled:opacity-50"
+                                      disabled={isSaving}
+                                    >
+                                      {isSaving ? "Saving..." : labels[language].save}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingResponse(null);
+                                        setEditFormData({});
+                                      }}
+                                      className="bg-gray-600 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition disabled:opacity-50"
+                                      disabled={isSaving}
+                                    >
+                                      {labels[language].cancel}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                               <div className="space-y-4">
                                 {submission.responses
                                   ?.filter((response) => !response.isSubQuestion)
@@ -563,19 +706,8 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                         className="cursor-pointer flex items-center justify-between"
                                         onClick={() => toggleQuestion(submission._id, response.questionId)}
                                       >
-                                        <div className="mb-3">
-                                          <span className="font-medium text-gray-700">{labels[language].question}:</span>
-                                          {editingResponse === submission._id ? (
-                                            <input
-                                              type="text"
-                                              value={editFormData.responses[index]?.questionText || ""}
-                                              onChange={(e) => handleInputChange(index, "questionText", e.target.value)}
-                                              className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                          ) : (
-                                            <span className="ml-2">{response.questionText || "N/A"}</span>
-                                          )}
-                                        </div>
+                                        <span className="font-medium text-gray-700">{labels[language].question}:</span>
+                                        <span className="ml-2">{response.questionText || "N/A"}</span>
                                         <span
                                           className={`transform transition-transform ${
                                             expandedQuestions[`${submission._id}_${response.questionId}`] ? "rotate-180" : ""
@@ -588,16 +720,7 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                         <div className="ml-4">
                                           <div className="mb-3">
                                             <span className="font-medium text-gray-700">{labels[language].answer}:</span>
-                                            {editingResponse === submission._id ? (
-                                              <input
-                                                type="text"
-                                                value={editFormData.responses[index]?.answer || ""}
-                                                onChange={(e) => handleInputChange(index, "answer", e.target.value)}
-                                                className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                              />
-                                            ) : (
-                                              <span className="ml-2">{response.answer || "N/A"}</span>
-                                            )}
+                                            <span className="ml-2">{response.answer || "N/A"}</span>
                                           </div>
                                           {(response.images?.length > 0 || response.videos?.length > 0) && (
                                             <div className="mt-2">
@@ -637,63 +760,19 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                               )}
                                             </div>
                                           )}
-                                          {/* Sub-questions */}
                                           {submission.responses
                                             .filter(
-                                              (subResp) =>
-                                                subResp.isSubQuestion && subResp.parentQuestionId === response.questionId
+                                              (subResp) => subResp.isSubQuestion && subResp.parentQuestionId === response.questionId
                                             )
                                             .map((subResponse, subIndex) => (
                                               <div key={subIndex} className="ml-6 border-l-2 border-blue-200 pl-4 mt-4">
                                                 <div className="mb-3">
                                                   <span className="font-medium text-gray-700">{labels[language].question} (Subquestion):</span>
-                                                  {editingResponse === submission._id ? (
-                                                    <input
-                                                      type="text"
-                                                      value={
-                                                        editFormData.responses.find(
-                                                          (r) => r.questionId === subResponse.questionId
-                                                        )?.questionText || ""
-                                                      }
-                                                      onChange={(e) =>
-                                                        handleInputChange(
-                                                          submission.responses.findIndex(
-                                                            (r) => r.questionId === subResponse.questionId
-                                                          ),
-                                                          "questionText",
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                  ) : (
-                                                    <span className="ml-2">{subResponse.questionText || "N/A"}</span>
-                                                  )}
+                                                  <span className="ml-2">{subResponse.questionText || "N/A"}</span>
                                                 </div>
                                                 <div className="mb-3">
                                                   <span className="font-medium text-gray-700">{labels[language].answer}:</span>
-                                                  {editingResponse === submission._id ? (
-                                                    <input
-                                                      type="text"
-                                                      value={
-                                                        editFormData.responses.find(
-                                                          (r) => r.questionId === subResponse.questionId
-                                                        )?.answer || ""
-                                                      }
-                                                      onChange={(e) =>
-                                                        handleInputChange(
-                                                          submission.responses.findIndex(
-                                                            (r) => r.questionId === subResponse.questionId
-                                                          ),
-                                                          "answer",
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="ml-2 border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                  ) : (
-                                                    <span className="ml-2">{subResponse.answer || "N/A"}</span>
-                                                  )}
+                                                  <span className="ml-2">{subResponse.answer || "N/A"}</span>
                                                 </div>
                                                 {(subResponse.images?.length > 0 || subResponse.videos?.length > 0) && (
                                                   <div className="mt-2">
@@ -739,9 +818,9 @@ const Admin = ({ language = "en", toggleLanguage }) => {
                                       )}
                                     </div>
                                   ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       ) : (
                         <div className="text-center p-6 text-gray-600">{labels[language].noSubmissions}</div>
@@ -755,10 +834,9 @@ const Admin = ({ language = "en", toggleLanguage }) => {
             <div className="text-center p-6 text-gray-600">{labels[language].noUsers}</div>
           )}
         </div>
-      </div>
 
-      {/* Image Modal */}
-      <ImageModal src={selectedImage} alt={labels[language].submissionImage} onClose={() => setSelectedImage(null)} />
+        <ImageModal src={selectedImage} alt={labels[language].submissionImage} onClose={() => setSelectedImage(null)} />
+      </div>
     </div>
   );
 };

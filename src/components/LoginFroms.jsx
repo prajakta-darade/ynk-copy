@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { Phone, Lock, ChevronRight, Globe } from "lucide-react";
 import logo from "../assets/logo.png";
@@ -250,12 +250,12 @@ const LoginForms = ({ language = "en", toggleLanguage }) => {
           <div className="text-center text-sm text-gray-600 space-y-2">
             <p>
               {labels[currentLanguage].register.split("Register")[0]}
-              <span
-                onClick={() => navigate("/contact-info")}
+              <Link
+                to="/contact-info"
                 className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer transition-all duration-200"
               >
                 Register
-              </span>
+              </Link>
             </p>
             <p>
               <span
